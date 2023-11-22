@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="Rir1NH" name="VoxProcessor" projectType="audioplug" useAppConfig="0"
-              addUsingNamespaceToJuceHeader="0" displaySplashScreen="1" jucerFormatVersion="1">
+              addUsingNamespaceToJuceHeader="0" displaySplashScreen="1" jucerFormatVersion="1"
+              cppLanguageStandard="20">
   <MAINGROUP id="he8TPR" name="VoxProcessor">
     <GROUP id="{5F1CD1AF-CB6A-8EDC-258E-73A56336A416}" name="Source">
       <FILE id="KiT5fs" name="PluginProcessor.cpp" compile="1" resource="0"
