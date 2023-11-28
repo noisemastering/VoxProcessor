@@ -131,6 +131,17 @@ bool VoxProcessorAudioProcessor::isBusesLayoutSupported (const BusesLayout& layo
 
 void VoxProcessorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
+    
+    //TODO: add APVTS
+    //TODO: create audio parameters for all dsp choices
+    //TODO: update DSP here from audio parameters
+    //TODO: save/load settings
+    //TODO: save/load DSP order
+    //TODO: Drag-To-Reorder GUI
+    //TODO: GUI design for each DSP instance?
+    //TODO: metering
+    //TODO: prepare all DSP
+    
     juce::ScopedNoDenormals noDenormals;
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
