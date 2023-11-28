@@ -143,8 +143,56 @@ void VoxProcessorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     // this code if your algorithm always overwrites all the output channels.
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
-
-  
+    
+    //Temp instance to pull into
+    auto newDSPOrder = DSP_Order(); // <-- This is just an array
+    
+    //Try to pull from the Fifo
+    while(dspOrderFifo.pull(newDSPOrder))
+    {
+        
+    }
+    //If pull succeeded, we refresh dspOrder
+    if(newDSPOrder != DSP_Order())
+        dspOrder = newDSPOrder;
+    
+    //convert dspOrder into an array of pointers to the DSP objects
+    DSP_Pointers dspPointers;
+    
+    //We reasign the objects to their pointers if needed
+    for(size_t i = 0; i < dspPointers.size(); ++i)
+    {
+        switch (dspOrder[i])
+        {
+            case DSP_Option::Phase:
+                dspPointers[i] = &phaser;
+                break;
+            case DSP_Option::Chorus:
+                dspPointers[i] = &chorus;
+                break;
+            case DSP_Option::OverDrive:
+                dspPointers[i] = &overdrive;
+                break;
+            case DSP_Option::LadderFilter:
+                dspPointers[i] = &ladderFilter;
+                break;
+            case DSP_Option::END_OF_LIST:
+                jassertfalse;
+                break;
+        }
+    }
+    
+    //Now, with the list up to date we can process
+    auto block = juce::dsp::AudioBlock<float>(buffer);
+    auto context = juce::dsp::ProcessContextReplacing<float>(block);
+    
+    for(size_t i = 0; i < dspPointers.size(); ++i)
+    {
+        if(dspPointers[i] != nullptr)
+        {
+            dspPointers[i]->process(context);
+        }
+    }
 }
 
 //==============================================================================
