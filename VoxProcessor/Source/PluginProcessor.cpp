@@ -129,10 +129,17 @@ bool VoxProcessorAudioProcessor::isBusesLayoutSupported (const BusesLayout& layo
 }
 #endif
 
+juce::AudioProcessorValueTreeState::ParameterLayout VoxProcessorAudioProcessor::createParameterLayour()
+{
+    juce::AudioProcessorValueTreeState::ParameterLayout layout;
+    
+    return layout;
+}
+
 void VoxProcessorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
     
-    //TODO: add APVTS
+    //[DONE]: add APVTS
     //TODO: create audio parameters for all dsp choices
     //TODO: update DSP here from audio parameters
     //TODO: save/load settings

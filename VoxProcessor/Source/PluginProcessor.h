@@ -69,6 +69,8 @@ public:
     using DSP_Order = std::array<DSP_Option, static_cast<size_t>(DSP_Option::END_OF_LIST)>;
     using DSP_Pointers = std::array<juce::dsp::ProcessorBase*, static_cast<size_t>(DSP_Option::END_OF_LIST)>;
     SimpleMBComp::Fifo<DSP_Order> dspOrderFifo;
+    static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayour();
+    juce::AudioProcessorValueTreeState apvts {*this, nullptr, "Settings", createParameterLayour()};
 private:
     //==============================================================================
     DSP_Order dspOrder;
