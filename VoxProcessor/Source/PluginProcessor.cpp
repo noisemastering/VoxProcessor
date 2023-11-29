@@ -9,6 +9,12 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
+auto getPhaserRateName() { return juce::String("Phaser RateHz"); }
+auto getPhaserCenterFreqName() { return juce::String("Phaser Center FreqHz"); }
+auto getPhaserDepthName() { return juce::String("Phaser Depth %" ); }
+auto getPhaserFeedbackName() { return juce::String("Phaser Feedback %" ); }
+auto getPhaserMixName() { return juce::String("Phaser Mix %"); }
+
 //==============================================================================
 VoxProcessorAudioProcessor::VoxProcessorAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -22,6 +28,30 @@ VoxProcessorAudioProcessor::VoxProcessorAudioProcessor()
                        )
 #endif
 {
+    auto phaserParams = std::array
+    {
+        &phaserRateHz,
+        &phaserCenterFreqHz,
+        &phaserDepthPercent,
+        &phaserFeedbackPercent,
+        &phaserMixPercent,
+    };
+    
+    auto phaserFuncs = std::array
+    {
+        &getPhaserRateName,
+        &getPhaserCenterFreqName,
+        &getPhaserDepthName,
+        &getPhaserFeedbackName,
+        &getPhaserMixName,
+    };
+    
+    for (size_t i = 0; i < phaserParams.size(); ++i)
+    {
+        auto ptrToParamPtr = phaserParams[i];
+        *ptrToParamPtr = dynamic_cast<juce::AudioParameterFloat*>(apvts.getParameter(phaserFuncs[i]()));
+        jassert(*ptrToParamPtr != nullptr);
+    }
 }
 
 VoxProcessorAudioProcessor::~VoxProcessorAudioProcessor()
@@ -132,6 +162,44 @@ bool VoxProcessorAudioProcessor::isBusesLayoutSupported (const BusesLayout& layo
 juce::AudioProcessorValueTreeState::ParameterLayout VoxProcessorAudioProcessor::createParameterLayour()
 {
     juce::AudioProcessorValueTreeState::ParameterLayout layout;
+    
+    const int versionHint = 1;
+    
+    //phaser rate LFO Hz
+    auto name = getPhaserRateName();
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{name, versionHint},
+                                                           name,
+                                                           juce::NormalisableRange<float>(0.01f, 2.f, 0.01f, 1.f),
+                                                           0.2f,
+                                                           "Hz"));
+    //phaser depth: 0 - 1
+    name = getPhaserDepthName();
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{name, versionHint},
+                                                           name,
+                                                           juce::NormalisableRange<float>(0.01f, 1.f, 0.01f, 1.f),
+                                                            0.05f,
+                                                            "%"));
+    //phaser center freq: audio Hz
+    name = getPhaserCenterFreqName();
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{name, versionHint},
+                                                            name,
+                                                            juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 1.f),
+                                                            1000.f,
+                                                            "Hz"));
+    //phaser feedback: -1 to 1
+    name = getPhaserFeedbackName();
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{name, versionHint},
+                                                            name,
+                                                            juce::NormalisableRange<float>(-1.f, 1.f, 0.01f, 1.f),
+                                                            0.0f,
+                                                            "%"));
+    //phaser mix: 0 - 1
+    name = getPhaserMixName();
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{name, versionHint},
+                                                            name,
+                                                            juce::NormalisableRange<float>(0.01f, 1.f, 0.01f, 1.f),
+                                                            0.05f,
+                                                            "%"));
     
     return layout;
 }

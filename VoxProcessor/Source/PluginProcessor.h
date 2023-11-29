@@ -71,6 +71,13 @@ public:
     SimpleMBComp::Fifo<DSP_Order> dspOrderFifo;
     static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayour();
     juce::AudioProcessorValueTreeState apvts {*this, nullptr, "Settings", createParameterLayour()};
+    
+    juce::AudioParameterFloat* phaserRateHz = nullptr;
+    juce::AudioParameterFloat* phaserCenterFreqHz = nullptr;
+    juce::AudioParameterFloat* phaserDepthPercent = nullptr;
+    juce::AudioParameterFloat* phaserFeedbackPercent = nullptr;
+    juce::AudioParameterFloat* phaserMixPercent = nullptr;
+    
 private:
     //==============================================================================
     DSP_Order dspOrder;
