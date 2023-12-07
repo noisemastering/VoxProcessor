@@ -40,6 +40,23 @@ auto getLadderFilterChoices()
     };
 }
 
+auto getGenearlFilterChoices()
+{
+    return juce::StringArray
+    {
+        "Peak",
+        "bandpass",
+        "notch",
+        "allpass",
+    };
+}
+
+auto getGeneralFilterModeName() { return juce::String("General Filter Mode"); }
+auto getGeneralFilterFreqName() { return juce::String("General Filter Freq Hz"); }
+auto getGeneralFilterQualityName() { return juce::String("General Filter Quality"); }
+auto getGeneralFilterGain() { return juce::String("General Filter Gain"); }
+
+
 //==============================================================================
 VoxProcessorAudioProcessor::VoxProcessorAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -72,6 +89,10 @@ VoxProcessorAudioProcessor::VoxProcessorAudioProcessor()
         &ladderFilterCutoffHz,
         &ladderFilterResonance,
         &ladderFilterDrive,
+        
+        &generalFilterFreq,
+        &generalFilterQuality,
+        &generalFilterGain,
     };
     
     auto floatNameFuncs = std::array
@@ -93,6 +114,10 @@ VoxProcessorAudioProcessor::VoxProcessorAudioProcessor()
         &getLadderFilterCutoffName,
         &getLadderFilterResonanceName,
         &getLadderFilterDriveName,
+        
+        &getGeneralFilterFreqName,
+        &getGeneralFilterQualityName,
+        &getGeneralFilterGain,
     };
     
     jassert( floatParams.size() == floatNameFuncs.size() );
@@ -103,8 +128,27 @@ VoxProcessorAudioProcessor::VoxProcessorAudioProcessor()
         jassert(*ptrToParamPtr != nullptr);
     }
     
-    ladderFilterMode = dynamic_cast<juce::AudioParameterChoice*>(apvts.getParameter(getLadderFilterModeName()));
-    jassert(ladderFilterMode != nullptr);
+    auto choiceParams = std::array
+    {
+        &ladderFilterMode,
+        
+        &generalFilterMode,
+    };
+    
+    auto choiceFuncs = std::array
+    {
+        &getLadderFilterModeName,
+        
+        &getGeneralFilterModeName,
+    };
+    
+    jassert( choiceParams.size() == choiceFuncs.size() );
+    for (size_t i=0; i < choiceParams.size(); ++i)
+    {
+        auto ptrToParamPtr = choiceParams[i];
+        *ptrToParamPtr = dynamic_cast<juce::AudioParameterChoice*>(apvts.getParameter(choiceFuncs[i]()));
+        jassert(*ptrToParamPtr != nullptr);
+    }
 }
 
 VoxProcessorAudioProcessor::~VoxProcessorAudioProcessor()
@@ -327,6 +371,37 @@ juce::AudioProcessorValueTreeState::ParameterLayout VoxProcessorAudioProcessor::
                                                            1.f,
                                                            ""));
     
+    
+    
+    //Mode
+    name = getGeneralFilterModeName();
+    choices = getGenearlFilterChoices();
+    layout.add(std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{name, versionHint},
+                                                            name,
+                                                            choices,
+                                                            0));
+    
+    //Freq
+    name = getGeneralFilterFreqName();
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{name, versionHint},
+                                                           name,
+                                                           juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 1.f),
+                                                           750.f));
+    
+    //Quality
+    name = getGeneralFilterQualityName();
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{name, versionHint},
+                                                           name,
+                                                           juce::NormalisableRange<float>(1.f, 10.f, 0.05f, 1.f),
+                                                           1.f));
+    
+    //Gain
+    name = getGeneralFilterGain();
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{name, versionHint},
+                                                           name,
+                                                           juce::NormalisableRange<float>(-24.f, 24.f, 0.5f, 1.f),
+                                                           0.0f));
+     
     return layout;
 }
 
@@ -334,7 +409,7 @@ void VoxProcessorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 {
     
     //[DONE]: add APVTS
-    //TODO: create audio parameters for all dsp choices
+    //[DONE]: create audio parameters for all dsp choices
     //TODO: update DSP here from audio parameters
     //TODO: save/load settings
     //TODO: save/load DSP order
@@ -387,6 +462,9 @@ void VoxProcessorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
                 break;
             case DSP_Option::LadderFilter:
                 dspPointers[i] = &ladderFilter;
+                break;
+            case DSP_Option::GeneralFilter:
+                dspPointers[i] = &generalFilter;
                 break;
             case DSP_Option::END_OF_LIST:
                 jassertfalse;
