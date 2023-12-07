@@ -410,8 +410,10 @@ void VoxProcessorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     
     //[DONE]: add APVTS
     //[DONE]: create audio parameters for all dsp choices
-    //TODO: update DSP here from audio parameters
+    //[DONE]]: update DSP here from audio parameters
     //[DONE]: save/load settings
+    //TODO: update generalFilter coefficients
+    //TODO: add smoothers for all param updates
     //TODO: save/load DSP order
     //TODO: Drag-To-Reorder GUI
     //TODO: GUI design for each DSP instance?
@@ -430,6 +432,25 @@ void VoxProcessorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     // this code if your algorithm always overwrites all the output channels.
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
+    
+    
+    phaser.dsp.setRate(phaserRateHz->get());
+    phaser.dsp.setCentreFrequency(phaserCenterFreqHz->get());
+    phaser.dsp.setDepth(phaserDepthPercent->get());
+    phaser.dsp.setMix(phaserMixPercent->get());
+    
+    chorus.dsp.setRate(chorusRateHz->get());
+    chorus.dsp.setDepth(chorusDepthPercent->get());
+    chorus.dsp.setCentreDelay(chorusCenterDelayMs->get());
+    chorus.dsp.setFeedback(chorusFeedbackPercent->get());
+    chorus.dsp.setMix(chorusMixPercent->get());
+    
+    overdrive.dsp.setDrive(overdriveSaturation->get());
+    
+    ladderFilter.dsp.setMode(static_cast<juce::dsp::LadderFilterMode>(ladderFilterMode->getIndex()));
+    ladderFilter.dsp.setCutoffFrequencyHz(ladderFilterCutoffHz->get());
+    ladderFilter.dsp.setResonance(ladderFilterResonance->get());
+    ladderFilter.dsp.setDrive(ladderFilterDrive->get());
     
     //Temp instance to pull into
     auto newDSPOrder = DSP_Order(); // <-- This is just an array
