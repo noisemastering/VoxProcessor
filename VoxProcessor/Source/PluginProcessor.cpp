@@ -411,7 +411,7 @@ void VoxProcessorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     //[DONE]: add APVTS
     //[DONE]: create audio parameters for all dsp choices
     //TODO: update DSP here from audio parameters
-    //TODO: save/load settings
+    //[DONE]: save/load settings
     //TODO: save/load DSP order
     //TODO: Drag-To-Reorder GUI
     //TODO: GUI design for each DSP instance?
@@ -493,7 +493,8 @@ bool VoxProcessorAudioProcessor::hasEditor() const
 
 juce::AudioProcessorEditor* VoxProcessorAudioProcessor::createEditor()
 {
-    return new VoxProcessorAudioProcessorEditor (*this);
+    return new juce::GenericAudioProcessorEditor(*this);
+//    return new VoxProcessorAudioProcessorEditor (*this);
 }
 
 //==============================================================================
@@ -502,12 +503,20 @@ void VoxProcessorAudioProcessor::getStateInformation (juce::MemoryBlock& destDat
     // You should use this method to store your parameters in the memory block.
     // You could do that either as raw data, or use the XML or ValueTree classes
     // as intermediaries to make it easy to save and load complex data.
+    juce::MemoryOutputStream mos(destData, false);
+    apvts.state.writeToStream(mos);
 }
 
 void VoxProcessorAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
     // You should use this method to restore your parameters from this memory block,
     // whose contents will have been created by the getStateInformation() call.
+    
+    auto tree = juce::ValueTree::readFromData(data, sizeInBytes);
+    if(tree.isValid())
+    {
+        apvts.replaceState(tree);
+    }
 }
 
 //==============================================================================
