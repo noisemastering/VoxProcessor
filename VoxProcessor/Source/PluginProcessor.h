@@ -73,6 +73,8 @@ public:
     static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayour();
     juce::AudioProcessorValueTreeState apvts {*this, nullptr, "Settings", createParameterLayour()};
     
+    
+    //Cached parameter instances
     juce::AudioParameterFloat* phaserRateHz = nullptr;
     juce::AudioParameterFloat* phaserCenterFreqHz = nullptr;
     juce::AudioParameterFloat* phaserDepthPercent = nullptr;
@@ -97,6 +99,11 @@ public:
     juce::AudioParameterFloat* generalFilterQuality = nullptr;
     juce::AudioParameterFloat* generalFilterGain = nullptr;
     
+    juce::AudioParameterBool* phaserBypass = nullptr;
+    juce::AudioParameterBool* chorusBypass = nullptr;
+    juce::AudioParameterBool* overdriveBypass = nullptr;
+    juce::AudioParameterBool* ladderFilterBypass = nullptr;
+    juce::AudioParameterBool* generalFilterBypass = nullptr;
     
 private:
     //==============================================================================

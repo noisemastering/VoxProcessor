@@ -56,6 +56,11 @@ auto getGeneralFilterFreqName() { return juce::String("General Filter Freq Hz");
 auto getGeneralFilterQualityName() { return juce::String("General Filter Quality"); }
 auto getGeneralFilterGainName() { return juce::String("General Filter Gain"); }
 
+auto getPhaserBypassName() { return juce::String("Phaser Bypass"); }
+auto getChorusBypassName() { return juce::String("Chorus Bypass"); }
+auto getOverdriveBypassName() { return juce::String("Overdrive Bypass"); }
+auto getLadderFilterBypassName() { return juce::String("Ladder Filter Bypass"); }
+auto getGeneralFilterBypassName() { return juce::String("General Filter Bypass"); }
 
 //==============================================================================
 VoxProcessorAudioProcessor::VoxProcessorAudioProcessor()
@@ -156,6 +161,31 @@ VoxProcessorAudioProcessor::VoxProcessorAudioProcessor()
         auto ptrToParamPtr = choiceParams[i];
         *ptrToParamPtr = dynamic_cast<juce::AudioParameterChoice*>(apvts.getParameter(choiceFuncs[i]()));
         jassert(*ptrToParamPtr != nullptr);
+    }
+    
+    auto bypassParams = std::array
+    {
+        &phaserBypass,
+        &chorusBypass,
+        &overdriveBypass,
+        &ladderFilterBypass,
+        &generalFilterBypass,
+    };
+    
+    auto bypassNameFuncs = std::array
+    {
+        &getPhaserBypassName,
+        &getChorusBypassName,
+        &getOverdriveBypassName,
+        &getLadderFilterBypassName,
+        &getGeneralFilterBypassName,
+    };
+    
+    for (size_t i = 0; i < bypassParams.size(); ++i)
+    {
+        auto ptrToParamPtr = bypassParams[i];
+        *ptrToParamPtr = dynamic_cast<juce::AudioParameterBool*>(apvts.getParameter(bypassNameFuncs[i]()));
+        jassert(ptrToParamPtr != nullptr);
     }
 }
 
@@ -429,7 +459,22 @@ juce::AudioProcessorValueTreeState::ParameterLayout VoxProcessorAudioProcessor::
                                                            name,
                                                            juce::NormalisableRange<float>(-24.f, 24.f, 0.5f, 1.f),
                                                            0.0f));
-     
+    
+    name = getPhaserBypassName();
+    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{name, versionHint}, name, false));
+    
+    name = getChorusBypassName();
+    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{name, versionHint}, name, false));
+    
+    name = getOverdriveBypassName();
+    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{name, versionHint}, name, false));
+    
+    name = getLadderFilterBypassName();
+    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{name, versionHint}, name, false));
+    
+    name = getGeneralFilterBypassName();
+    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{name, versionHint}, name, false));
+    
     return layout;
 }
 
