@@ -533,7 +533,9 @@ void VoxProcessorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     //Try to pull from the Fifo
     while(dspOrderFifo.pull(newDSPOrder))
     {
-        
+#if VERIFY_BYPASS_FUNCTIONALITY
+        jassertfalse;
+#endif
     }
     //If pull succeeded, we refresh dspOrder
     if(newDSPOrder != DSP_Order())
@@ -541,7 +543,7 @@ void VoxProcessorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     
     //convert dspOrder into an array of pointers to the DSP objects
     DSP_Pointers dspPointers;
-    dspPointers.fill(nullptr);
+    dspPointers.fill({});
     
     //We reasign the objects to their pointers if needed
     for(size_t i = 0; i < dspPointers.size(); ++i)
@@ -549,19 +551,24 @@ void VoxProcessorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         switch (dspOrder[i])
         {
             case DSP_Option::Phase:
-                dspPointers[i] = &phaser;
+                dspPointers[i].processor = &phaser;
+                dspPointers[i].bypassed = phaserBypass->get();
                 break;
             case DSP_Option::Chorus:
-                dspPointers[i] = &chorus;
+                dspPointers[i].processor = &chorus;
+                dspPointers[i].bypassed = chorusBypass->get();
                 break;
             case DSP_Option::OverDrive:
-                dspPointers[i] = &overdrive;
+                dspPointers[i].processor = &overdrive;
+                dspPointers[i].bypassed = overdriveBypass->get();
                 break;
             case DSP_Option::LadderFilter:
-                dspPointers[i] = &ladderFilter;
+                dspPointers[i].processor = &ladderFilter;
+                dspPointers[i].bypassed = ladderFilterBypass->get();
                 break;
             case DSP_Option::GeneralFilter:
-                dspPointers[i] = &generalFilter;
+                dspPointers[i].processor = &generalFilter;
+                dspPointers[i].bypassed = generalFilterBypass->get();
                 break;
             case DSP_Option::END_OF_LIST:
                 jassertfalse;
@@ -575,9 +582,21 @@ void VoxProcessorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     
     for(size_t i = 0; i < dspPointers.size(); ++i)
     {
-        if(dspPointers[i] != nullptr)
+        if(dspPointers[i].processor != nullptr)
         {
-            dspPointers[i]->process(context);
+            juce::ScopedValueSetter<bool> svs(context.isBypassed, dspPointers[i].bypassed);
+#if VERIFY_BYPASS_FUNCTIONALITY
+            if( context.isBypassed )
+            {
+                jassertfalse;
+            }
+            
+            if( dspPointers[i].processor == &generalFilter )
+            {
+                continue;
+            }
+#endif
+            dspPointers[i].processor->process(context);
         }
     }
 }
@@ -590,8 +609,8 @@ bool VoxProcessorAudioProcessor::hasEditor() const
 
 juce::AudioProcessorEditor* VoxProcessorAudioProcessor::createEditor()
 {
-//    return new juce::GenericAudioProcessorEditor(*this);
-    return new VoxProcessorAudioProcessorEditor (*this);
+    return new juce::GenericAudioProcessorEditor(*this);
+//    return new VoxProcessorAudioProcessorEditor (*this);
 }
 
 template<>
@@ -674,7 +693,19 @@ void VoxProcessorAudioProcessor::setStateInformation (const void* data, int size
             dspOrderFifo.push(order);
         }
         DBG(apvts.state.toXmlString());
-        jassertfalse;
+        
+#if VERIFY_BYPASS_FUNCTIONALITY
+        juce::Timer::callAfterDelay(1000,[this]()
+        {
+            DSP_Order order;
+            order.fill(DSP_Option::LadderFilter);
+            order[0] = DSP_Option::Chorus;
+            
+            //bypass the Chorus
+            chorusBypass->setValueNotifyingHost(1.f);
+            dspOrderFifo.push(order);
+        });
+#endif
         
     }
 }

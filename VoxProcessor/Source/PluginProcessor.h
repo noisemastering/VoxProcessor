@@ -68,7 +68,12 @@ public:
     };
     
     using DSP_Order = std::array<DSP_Option, static_cast<size_t>(DSP_Option::END_OF_LIST)>;
-    using DSP_Pointers = std::array<juce::dsp::ProcessorBase*, static_cast<size_t>(DSP_Option::END_OF_LIST)>;
+    struct ProcessState
+    {
+        juce::dsp::ProcessorBase* processor = nullptr;
+        bool bypassed = false;
+    };
+    using DSP_Pointers = std::array<ProcessState, static_cast<size_t>(DSP_Option::END_OF_LIST)>;
     SimpleMBComp::Fifo<DSP_Order> dspOrderFifo;
     static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayour();
     juce::AudioProcessorValueTreeState apvts {*this, nullptr, "Settings", createParameterLayour()};
@@ -133,6 +138,9 @@ private:
     DSP_Choice<juce::dsp::Chorus<float>> chorus;
     DSP_Choice<juce::dsp::LadderFilter<float>> overdrive, ladderFilter;
     DSP_Choice<juce::dsp::IIR::Filter<float>> generalFilter;
-    
+
+#define VERIFY_BYPASS_FUNCTIONALITY false
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (VoxProcessorAudioProcessor)
+    
+
 };
