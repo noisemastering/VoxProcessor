@@ -93,7 +93,7 @@ public:
     juce::AudioParameterFloat* ladderFilterDrive = nullptr;
     
     juce::AudioParameterChoice* generalFilterMode = nullptr;
-    juce::AudioParameterFloat* generalFilterFreq = nullptr;
+    juce::AudioParameterFloat* generalFilterFreqHz = nullptr;
     juce::AudioParameterFloat* generalFilterQuality = nullptr;
     juce::AudioParameterFloat* generalFilterGain = nullptr;
     

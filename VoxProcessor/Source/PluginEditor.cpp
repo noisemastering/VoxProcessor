@@ -15,6 +15,26 @@ VoxProcessorAudioProcessorEditor::VoxProcessorAudioProcessorEditor (VoxProcessor
 {
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
+    dspOprderButton.onClick = [this]()
+    {
+        juce::Random r;
+        VoxProcessorAudioProcessor::DSP_Order dspOrder;
+        
+        auto range = juce::Range<int>(static_cast<int>(VoxProcessorAudioProcessor::DSP_Option::Phase),
+                                      static_cast<int>(VoxProcessorAudioProcessor::DSP_Option::END_OF_LIST));
+        
+        for( auto& v : dspOrder )
+        {
+            auto entry = r.nextInt(range);
+            v = static_cast<VoxProcessorAudioProcessor::DSP_Option>(entry);
+        }
+        DBG(juce::Base64::toBase64(dspOrder.data(), dspOrder.size()));
+        jassertfalse;
+        
+        audioProcessor.dspOrderFifo.push(dspOrder);
+    };
+    
+    addAndMakeVisible(dspOprderButton);
     setSize (400, 300);
 }
 
@@ -37,4 +57,6 @@ void VoxProcessorAudioProcessorEditor::resized()
 {
     // This is generally where you'll want to lay out the positions of any
     // subcomponents in your editor..
+    
+    dspOprderButton.setBounds(getLocalBounds().reduced(100));
 }

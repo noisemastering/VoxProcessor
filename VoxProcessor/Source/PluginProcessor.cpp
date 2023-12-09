@@ -54,7 +54,7 @@ auto getGenearlFilterChoices()
 auto getGeneralFilterModeName() { return juce::String("General Filter Mode"); }
 auto getGeneralFilterFreqName() { return juce::String("General Filter Freq Hz"); }
 auto getGeneralFilterQualityName() { return juce::String("General Filter Quality"); }
-auto getGeneralFilterGain() { return juce::String("General Filter Gain"); }
+auto getGeneralFilterGainName() { return juce::String("General Filter Gain"); }
 
 
 //==============================================================================
@@ -70,6 +70,14 @@ VoxProcessorAudioProcessor::VoxProcessorAudioProcessor()
                        )
 #endif
 {
+    dspOrder =
+    {{
+        DSP_Option::Phase,
+        DSP_Option::Chorus,
+        DSP_Option::OverDrive,
+        DSP_Option::LadderFilter,
+    }};
+    
     auto floatParams = std::array
     {
         &phaserRateHz,
@@ -90,7 +98,7 @@ VoxProcessorAudioProcessor::VoxProcessorAudioProcessor()
         &ladderFilterResonance,
         &ladderFilterDrive,
         
-        &generalFilterFreq,
+        &generalFilterFreqHz,
         &generalFilterQuality,
         &generalFilterGain,
     };
@@ -117,7 +125,7 @@ VoxProcessorAudioProcessor::VoxProcessorAudioProcessor()
         
         &getGeneralFilterFreqName,
         &getGeneralFilterQualityName,
-        &getGeneralFilterGain,
+        &getGeneralFilterGainName,
     };
     
     jassert( floatParams.size() == floatNameFuncs.size() );
@@ -142,7 +150,7 @@ VoxProcessorAudioProcessor::VoxProcessorAudioProcessor()
         &getGeneralFilterModeName,
     };
     
-    jassert( choiceParams.size() == choiceFuncs.size() );
+//    jassert( choiceParams.size() == choiceFuncs.size() );
     for (size_t i=0; i < choiceParams.size(); ++i)
     {
         auto ptrToParamPtr = choiceParams[i];
@@ -222,6 +230,26 @@ void VoxProcessorAudioProcessor::prepareToPlay (double sampleRate, int samplesPe
 {
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
+    
+    juce::dsp::ProcessSpec spec;
+    spec.sampleRate = sampleRate;
+    spec.maximumBlockSize = samplesPerBlock;
+    spec.numChannels = getTotalNumInputChannels();
+    
+    std::vector<juce::dsp::ProcessorBase*> dsp
+    {
+        &phaser,
+        &chorus,
+        &overdrive,
+        &ladderFilter,
+        &generalFilter,
+    };
+    
+    for (auto p : dsp)
+    {
+        p->prepare(spec);
+        p->reset();
+    }
 }
 
 void VoxProcessorAudioProcessor::releaseResources()
@@ -396,7 +424,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout VoxProcessorAudioProcessor::
                                                            1.f));
     
     //Gain
-    name = getGeneralFilterGain();
+    name = getGeneralFilterGainName();
     layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{name, versionHint},
                                                            name,
                                                            juce::NormalisableRange<float>(-24.f, 24.f, 0.5f, 1.f),
@@ -412,6 +440,8 @@ void VoxProcessorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     //[DONE]: create audio parameters for all dsp choices
     //[DONE]]: update DSP here from audio parameters
     //[DONE]: save/load settings
+    //[DONE]: save/load dsp order
+    //TODO: filters are mono, not stereo
     //TODO: update generalFilter coefficients
     //TODO: add smoothers for all param updates
     //TODO: save/load DSP order
@@ -466,6 +496,7 @@ void VoxProcessorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     
     //convert dspOrder into an array of pointers to the DSP objects
     DSP_Pointers dspPointers;
+    dspPointers.fill(nullptr);
     
     //We reasign the objects to their pointers if needed
     for(size_t i = 0; i < dspPointers.size(); ++i)
@@ -514,9 +545,60 @@ bool VoxProcessorAudioProcessor::hasEditor() const
 
 juce::AudioProcessorEditor* VoxProcessorAudioProcessor::createEditor()
 {
-    return new juce::GenericAudioProcessorEditor(*this);
-//    return new VoxProcessorAudioProcessorEditor (*this);
+//    return new juce::GenericAudioProcessorEditor(*this);
+    return new VoxProcessorAudioProcessorEditor (*this);
 }
+
+template<>
+struct juce::VariantConverter<VoxProcessorAudioProcessor::DSP_Order>
+{
+    static VoxProcessorAudioProcessor::DSP_Order fromVar(const juce::var& v)
+    {
+        using T = VoxProcessorAudioProcessor::DSP_Order;
+        T dspOrder;
+        
+        jassert(v.isBinaryData());
+        if(!v.isBinaryData())
+        {
+            dspOrder.fill(VoxProcessorAudioProcessor::DSP_Option::END_OF_LIST);
+        }
+        else
+        {
+            auto mb = *v.getBinaryData();
+            
+            juce::MemoryInputStream mis(mb, false);
+            std::vector<int> arr;
+            while(!mis.isExhausted())
+            {
+                arr.push_back(mis.readInt());
+            }
+            jassert(arr.size() == dspOrder.size());
+            
+            for(size_t i = 0; i < dspOrder.size(); ++i)
+            {
+                dspOrder[i] = static_cast<VoxProcessorAudioProcessor::DSP_Option>(arr[i]);
+            }
+        }
+        return dspOrder;
+    }
+    
+    static juce::var toVar( const VoxProcessorAudioProcessor::DSP_Order& t)
+    {
+        juce::MemoryBlock mb;
+        //juce MOS uses scoping to complete writing to the memory block correctly.
+        {
+            juce::MemoryOutputStream mos(mb, false);
+            
+            for( auto& v : t)
+            {
+                mos.writeInt(static_cast<int>(v));
+            }
+        }
+        
+        return mb;
+    }
+};
+
 
 //==============================================================================
 void VoxProcessorAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
@@ -524,19 +606,31 @@ void VoxProcessorAudioProcessor::getStateInformation (juce::MemoryBlock& destDat
     // You should use this method to store your parameters in the memory block.
     // You could do that either as raw data, or use the XML or ValueTree classes
     // as intermediaries to make it easy to save and load complex data.
+    apvts.state.setProperty("dspOrder",
+                            juce::VariantConverter<VoxProcessorAudioProcessor::DSP_Order>::toVar(dspOrder),
+                            nullptr);
+    
     juce::MemoryOutputStream mos(destData, false);
     apvts.state.writeToStream(mos);
+
 }
 
 void VoxProcessorAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
     // You should use this method to restore your parameters from this memory block,
     // whose contents will have been created by the getStateInformation() call.
-    
     auto tree = juce::ValueTree::readFromData(data, sizeInBytes);
     if(tree.isValid())
     {
         apvts.replaceState(tree);
+        if( apvts.state.hasProperty("dspOrder"))
+        {
+            auto order = juce::VariantConverter<VoxProcessorAudioProcessor::DSP_Order>::fromVar(apvts.state.getProperty("dspOrder"));
+            dspOrderFifo.push(order);
+        }
+        DBG(apvts.state.toXmlString());
+        jassertfalse;
+        
     }
 }
 
