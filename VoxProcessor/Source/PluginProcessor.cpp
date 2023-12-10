@@ -133,13 +133,8 @@ VoxProcessorAudioProcessor::VoxProcessorAudioProcessor()
         &getGeneralFilterGainName,
     };
     
-    jassert( floatParams.size() == floatNameFuncs.size() );
-    for (size_t i = 0; i < floatParams.size(); ++i)
-    {
-        auto ptrToParamPtr = floatParams[i];
-        *ptrToParamPtr = dynamic_cast<juce::AudioParameterFloat*>(apvts.getParameter(floatNameFuncs[i]()));
-        jassert(*ptrToParamPtr != nullptr);
-    }
+    
+    initCachedParams<juce::AudioParameterFloat*>(floatParams, floatNameFuncs);
     
     auto choiceParams = std::array
     {
@@ -155,13 +150,8 @@ VoxProcessorAudioProcessor::VoxProcessorAudioProcessor()
         &getGeneralFilterModeName,
     };
     
-//    jassert( choiceParams.size() == choiceFuncs.size() );
-    for (size_t i=0; i < choiceParams.size(); ++i)
-    {
-        auto ptrToParamPtr = choiceParams[i];
-        *ptrToParamPtr = dynamic_cast<juce::AudioParameterChoice*>(apvts.getParameter(choiceFuncs[i]()));
-        jassert(*ptrToParamPtr != nullptr);
-    }
+    
+    initCachedParams<juce::AudioParameterChoice*>(choiceParams, choiceFuncs);
     
     auto bypassParams = std::array
     {
@@ -181,12 +171,7 @@ VoxProcessorAudioProcessor::VoxProcessorAudioProcessor()
         &getGeneralFilterBypassName,
     };
     
-    for (size_t i = 0; i < bypassParams.size(); ++i)
-    {
-        auto ptrToParamPtr = bypassParams[i];
-        *ptrToParamPtr = dynamic_cast<juce::AudioParameterBool*>(apvts.getParameter(bypassNameFuncs[i]()));
-        jassert(ptrToParamPtr != nullptr);
-    }
+    initCachedParams<juce::AudioParameterBool*>(bypassParams, bypassNameFuncs);
 }
 
 VoxProcessorAudioProcessor::~VoxProcessorAudioProcessor()
