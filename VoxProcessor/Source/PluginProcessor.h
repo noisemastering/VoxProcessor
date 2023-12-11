@@ -57,6 +57,15 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
     
+    enum class GeneralFilterMode
+    {
+        Peak,
+        Bandpass,
+        Notch,
+        Allpass,
+        END_OF_LIST
+    };
+    
     enum class DSP_Option
     {
         Phase,
@@ -69,10 +78,11 @@ public:
     
     using DSP_Order = std::array<DSP_Option, static_cast<size_t>(DSP_Option::END_OF_LIST)>;
     
+    
     template<typename DSP>
     struct DSP_Choice : juce::dsp::ProcessorBase
     {
-        void prepare(const juce::dsp::ProcessSpec &spec) override
+        void prepare(const juce::dsp::ProcessSpec& spec) override
         {
             dsp.prepare(spec);
         }
@@ -102,7 +112,11 @@ public:
         void process(juce::dsp::AudioBlock<float> block, const DSP_Order& dspOrder);
         
     private:
+        
         VoxProcessorAudioProcessor& p;
+        
+        GeneralFilterMode filterMode = GeneralFilterMode::END_OF_LIST;
+        float filterFreq = 0.f, filterQ = 0.f, filterGain= -100.f;
     };
     
     MonoChannelDSP leftChannel{*this};
@@ -167,11 +181,10 @@ private:
             jassert(*ptrToParamPtr != nullptr);
         }
     };
-//    
-//    DSP_Choice<juce::dsp::DelayLine<float>> delay;
-//    DSP_Choice<juce::dsp::Phaser<float>> phaser;
-//    DSP_Choice<juce::dsp::Chorus<float>> chorus;
-//    DSP_Choice<juce::dsp::LadderFilter<float>> overdrive, ladderFilter;
+    
+    DSP_Choice<juce::dsp::Phaser<float>> phaser;
+    DSP_Choice<juce::dsp::Chorus<float>> chorus;
+    DSP_Choice<juce::dsp::LadderFilter<float>> overdrive, ladderFilter;
 //    DSP_Choice<juce::dsp::IIR::Filter<float>> generalFilter;
 
 #define VERIFY_BYPASS_FUNCTIONALITY false

@@ -75,13 +75,20 @@ VoxProcessorAudioProcessor::VoxProcessorAudioProcessor()
                        )
 #endif
 {
-    dspOrder =
-    {{
-        DSP_Option::Phase,
-        DSP_Option::Chorus,
-        DSP_Option::OverDrive,
-        DSP_Option::LadderFilter,
-    }};
+//    dspOrder =
+//    {{
+//        DSP_Option::Phase,
+//        DSP_Option::Chorus,
+//        DSP_Option::OverDrive,
+//        DSP_Option::LadderFilter,
+//    }};
+    
+    //This for replaces the manual initialization above, in this case GeneralFilter is added
+    //note how interesting is the static_cast option
+    for(size_t i = 0; i < static_cast<size_t>(DSP_Option::END_OF_LIST); ++i)
+    {
+        dspOrder[i] = static_cast<DSP_Option>(i);
+    }
     
     auto floatParams = std::array
     {
@@ -264,6 +271,9 @@ void VoxProcessorAudioProcessor::MonoChannelDSP::prepare(const juce::dsp::Proces
 
 void VoxProcessorAudioProcessor::MonoChannelDSP::updateDSPFromParams()
 {
+    
+    //TODO: update general coefficients here:
+    
     phaser.dsp.setRate(p.phaserRateHz->get());
     phaser.dsp.setCentreFrequency(p.phaserCenterFreqHz->get());
     phaser.dsp.setDepth(p.phaserDepthPercent->get());
@@ -282,6 +292,81 @@ void VoxProcessorAudioProcessor::MonoChannelDSP::updateDSPFromParams()
     ladderFilter.dsp.setCutoffFrequencyHz(p.ladderFilterCutoffHz->get());
     ladderFilter.dsp.setResonance(p.ladderFilterResonance->get());
     ladderFilter.dsp.setDrive(p.ladderFilterDrive->get());
+    
+    //update generalFilter coefficients
+    //choices: peak, bandpass, notch, allpass
+    auto genMode = p.generalFilterMode->getIndex();
+    auto genHz = p.generalFilterFreqHz->get();
+    auto genQ = p.generalFilterQuality->get();
+    auto genGain = p.generalFilterGain->get();
+    
+    bool filterChanged = false;
+    filterChanged |= (filterFreq != genHz);
+    filterChanged |= (filterQ != genQ);
+    filterChanged |= (filterGain != genGain);
+    
+    auto updatedMode = static_cast<GeneralFilterMode>(genMode);
+    filterChanged |= (filterMode != updatedMode);
+    
+    if(filterChanged)
+    {
+        auto sampleRate = p.getSampleRate();
+        
+        filterMode = updatedMode;
+        filterQ = genQ;
+        filterFreq = genHz;
+        filterGain = genGain;
+        
+        juce::dsp::IIR::Coefficients<float>::Ptr coefficients;
+        switch (filterMode)
+        {
+            case GeneralFilterMode::Peak:
+            {
+                coefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate,
+                                                                                   filterFreq,
+                                                                                   filterQ,
+                                                                                   juce::Decibels::decibelsToGain(filterGain));
+                break;
+            }
+            case GeneralFilterMode::Bandpass:
+            {
+                coefficients = juce::dsp::IIR::Coefficients<float>::makeBandPass(sampleRate,
+                                                                                 filterFreq,
+                                                                                 filterQ);
+                break;
+            }
+            case GeneralFilterMode::Notch:
+            {
+                coefficients = juce::dsp::IIR::Coefficients<float>::makeNotch(sampleRate,
+                                                                              filterFreq,
+                                                                              filterQ);
+                break;
+            }
+            case GeneralFilterMode::Allpass:
+            {
+                coefficients = juce::dsp::IIR::Coefficients<float>::makeAllPass(sampleRate,
+                                                                                filterFreq,
+                                                                                filterQ);
+                break;
+            }
+            case GeneralFilterMode::END_OF_LIST:
+            {
+                jassertfalse;
+                break;
+            }
+        }
+        
+        if (coefficients != nullptr)
+        {
+            if (generalFilter.dsp.coefficients->coefficients.size() != coefficients->coefficients.size())
+            {
+                jassertfalse;
+            }
+            
+            *generalFilter.dsp.coefficients = *coefficients;
+            generalFilter.reset();
+        }
+    }
 };
 
 void VoxProcessorAudioProcessor::MonoChannelDSP::process(juce::dsp::AudioBlock<float> block, const DSP_Order &dspOrder)
