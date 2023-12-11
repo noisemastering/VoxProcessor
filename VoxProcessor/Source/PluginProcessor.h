@@ -56,7 +56,7 @@ public:
     //==============================================================================
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
-
+    
     enum class DSP_Option
     {
         Phase,
@@ -68,6 +68,46 @@ public:
     };
     
     using DSP_Order = std::array<DSP_Option, static_cast<size_t>(DSP_Option::END_OF_LIST)>;
+    
+    template<typename DSP>
+    struct DSP_Choice : juce::dsp::ProcessorBase
+    {
+        void prepare(const juce::dsp::ProcessSpec &spec) override
+        {
+            dsp.prepare(spec);
+        }
+        void process(const juce::dsp::ProcessContextReplacing<float>& context) override
+        {
+            dsp.process(context);
+        }
+        void reset() override
+        {
+            dsp.reset();
+        }
+        
+        DSP dsp;
+    };
+    
+    struct MonoChannelDSP
+    {
+        MonoChannelDSP(VoxProcessorAudioProcessor& proc) : p(proc){}
+            
+        DSP_Choice<juce::dsp::Phaser<float>> phaser;
+        DSP_Choice<juce::dsp::Chorus<float>> chorus;
+        DSP_Choice<juce::dsp::LadderFilter<float>> overdrive, ladderFilter;
+        DSP_Choice<juce::dsp::IIR::Filter<float>> generalFilter;
+            
+        void prepare(const juce::dsp::ProcessSpec& spec);
+        void updateDSPFromParams();
+        void process(juce::dsp::AudioBlock<float> block, const DSP_Order& dspOrder);
+        
+    private:
+        VoxProcessorAudioProcessor& p;
+    };
+    
+    MonoChannelDSP leftChannel{*this};
+    MonoChannelDSP rightChannel{*this};
+    
     struct ProcessState
     {
         juce::dsp::ProcessorBase* processor = nullptr;
@@ -110,28 +150,12 @@ public:
     juce::AudioParameterBool* ladderFilterBypass = nullptr;
     juce::AudioParameterBool* generalFilterBypass = nullptr;
     
+    
+    
 private:
     //==============================================================================
     DSP_Order dspOrder;
     
-    template<typename DSP>
-    struct DSP_Choice : juce::dsp::ProcessorBase
-    {
-        void prepare(const juce::dsp::ProcessSpec &spec) override
-        {
-            dsp.prepare(spec);
-        }
-        void process(const juce::dsp::ProcessContextReplacing<float>& context) override
-        {
-            dsp.process(context);
-        }
-        void reset() override
-        {
-            dsp.reset();
-        }
-        
-        DSP dsp;
-    };
     
     template<typename ParamType, typename Params, typename Funcs>
     void initCachedParams(Params paramsArr, Funcs funcsArray)
@@ -143,12 +167,12 @@ private:
             jassert(*ptrToParamPtr != nullptr);
         }
     };
-    
-    DSP_Choice<juce::dsp::DelayLine<float>> delay;
-    DSP_Choice<juce::dsp::Phaser<float>> phaser;
-    DSP_Choice<juce::dsp::Chorus<float>> chorus;
-    DSP_Choice<juce::dsp::LadderFilter<float>> overdrive, ladderFilter;
-    DSP_Choice<juce::dsp::IIR::Filter<float>> generalFilter;
+//    
+//    DSP_Choice<juce::dsp::DelayLine<float>> delay;
+//    DSP_Choice<juce::dsp::Phaser<float>> phaser;
+//    DSP_Choice<juce::dsp::Chorus<float>> chorus;
+//    DSP_Choice<juce::dsp::LadderFilter<float>> overdrive, ladderFilter;
+//    DSP_Choice<juce::dsp::IIR::Filter<float>> generalFilter;
 
 #define VERIFY_BYPASS_FUNCTIONALITY false
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (VoxProcessorAudioProcessor)

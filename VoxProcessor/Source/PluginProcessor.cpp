@@ -240,16 +240,11 @@ void VoxProcessorAudioProcessor::changeProgramName (int index, const juce::Strin
 {
 }
 
-//==============================================================================
-void VoxProcessorAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
+
+
+void VoxProcessorAudioProcessor::MonoChannelDSP::prepare(const juce::dsp::ProcessSpec& spec)
 {
-    // Use this method as the place to do any pre-playback
-    // initialisation that you need..
-    
-    juce::dsp::ProcessSpec spec;
-    spec.sampleRate = sampleRate;
-    spec.maximumBlockSize = samplesPerBlock;
-    spec.numChannels = getTotalNumInputChannels();
+    jassert(spec.numChannels == 1);
     
     std::vector<juce::dsp::ProcessorBase*> dsp
     {
@@ -265,6 +260,104 @@ void VoxProcessorAudioProcessor::prepareToPlay (double sampleRate, int samplesPe
         p->prepare(spec);
         p->reset();
     }
+}
+
+void VoxProcessorAudioProcessor::MonoChannelDSP::updateDSPFromParams()
+{
+    phaser.dsp.setRate(p.phaserRateHz->get());
+    phaser.dsp.setCentreFrequency(p.phaserCenterFreqHz->get());
+    phaser.dsp.setDepth(p.phaserDepthPercent->get());
+    phaser.dsp.setFeedback(p.phaserFeedbackPercent->get());
+    phaser.dsp.setMix(p.phaserMixPercent->get());
+    
+    chorus.dsp.setRate(p.chorusRateHz->get());
+    chorus.dsp.setDepth(p.chorusDepthPercent->get());
+    chorus.dsp.setCentreDelay(p.chorusCenterDelayMs->get());
+    chorus.dsp.setFeedback(p.chorusFeedbackPercent->get());
+    chorus.dsp.setMix(p.chorusMixPercent->get());
+    
+    overdrive.dsp.setDrive(p.overdriveSaturation->get());
+    
+    ladderFilter.dsp.setMode(static_cast<juce::dsp::LadderFilterMode>(p.ladderFilterMode->getIndex()));
+    ladderFilter.dsp.setCutoffFrequencyHz(p.ladderFilterCutoffHz->get());
+    ladderFilter.dsp.setResonance(p.ladderFilterResonance->get());
+    ladderFilter.dsp.setDrive(p.ladderFilterDrive->get());
+};
+
+void VoxProcessorAudioProcessor::MonoChannelDSP::process(juce::dsp::AudioBlock<float> block, const DSP_Order &dspOrder)
+{
+    //convert dspOrder into an array of pointers to the DSP objects
+    DSP_Pointers dspPointers;
+    dspPointers.fill({});
+    
+    //We reasign the objects to their pointers if needed
+    for(size_t i = 0; i < dspPointers.size(); ++i)
+    {
+        switch (dspOrder[i])
+        {
+            case DSP_Option::Phase:
+                dspPointers[i].processor = &phaser;
+                dspPointers[i].bypassed = p.phaserBypass->get();
+                break;
+            case DSP_Option::Chorus:
+                dspPointers[i].processor = &chorus;
+                dspPointers[i].bypassed = p.chorusBypass->get();
+                break;
+            case DSP_Option::OverDrive:
+                dspPointers[i].processor = &overdrive;
+                dspPointers[i].bypassed = p.overdriveBypass->get();
+                break;
+            case DSP_Option::LadderFilter:
+                dspPointers[i].processor = &ladderFilter;
+                dspPointers[i].bypassed = p.ladderFilterBypass->get();
+                break;
+            case DSP_Option::GeneralFilter:
+                dspPointers[i].processor = &generalFilter;
+                dspPointers[i].bypassed = p.generalFilterBypass->get();
+                break;
+            case DSP_Option::END_OF_LIST:
+                jassertfalse;
+                break;
+        }
+    }
+    
+    //Now, with the list up to date we can process
+    auto context = juce::dsp::ProcessContextReplacing<float>(block);
+    
+    for(size_t i = 0; i < dspPointers.size(); ++i)
+    {
+        if(dspPointers[i].processor != nullptr)
+        {
+            juce::ScopedValueSetter<bool> svs(context.isBypassed, dspPointers[i].bypassed);
+#if VERIFY_BYPASS_FUNCTIONALITY
+            if( context.isBypassed )
+            {
+                jassertfalse;
+            }
+            
+            if( dspPointers[i].processor == &generalFilter )
+            {
+                continue;
+            }
+#endif
+            dspPointers[i].processor->process(context);
+        }
+    }
+}
+
+//==============================================================================
+void VoxProcessorAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
+{
+    // Use this method as the place to do any pre-playback
+    // initialisation that you need..
+    
+    juce::dsp::ProcessSpec spec;
+    spec.sampleRate = sampleRate;
+    spec.maximumBlockSize = samplesPerBlock;
+    spec.numChannels = 1;
+    
+    leftChannel.prepare(spec);
+    rightChannel.prepare(spec);
 }
 
 void VoxProcessorAudioProcessor::releaseResources()
@@ -494,23 +587,8 @@ void VoxProcessorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         buffer.clear (i, 0, buffer.getNumSamples());
     
     
-    phaser.dsp.setRate(phaserRateHz->get());
-    phaser.dsp.setCentreFrequency(phaserCenterFreqHz->get());
-    phaser.dsp.setDepth(phaserDepthPercent->get());
-    phaser.dsp.setMix(phaserMixPercent->get());
-    
-    chorus.dsp.setRate(chorusRateHz->get());
-    chorus.dsp.setDepth(chorusDepthPercent->get());
-    chorus.dsp.setCentreDelay(chorusCenterDelayMs->get());
-    chorus.dsp.setFeedback(chorusFeedbackPercent->get());
-    chorus.dsp.setMix(chorusMixPercent->get());
-    
-    overdrive.dsp.setDrive(overdriveSaturation->get());
-    
-    ladderFilter.dsp.setMode(static_cast<juce::dsp::LadderFilterMode>(ladderFilterMode->getIndex()));
-    ladderFilter.dsp.setCutoffFrequencyHz(ladderFilterCutoffHz->get());
-    ladderFilter.dsp.setResonance(ladderFilterResonance->get());
-    ladderFilter.dsp.setDrive(ladderFilterDrive->get());
+    leftChannel.updateDSPFromParams();
+    rightChannel.updateDSPFromParams();
     
     //Temp instance to pull into
     auto newDSPOrder = DSP_Order(); // <-- This is just an array
@@ -526,64 +604,9 @@ void VoxProcessorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     if(newDSPOrder != DSP_Order())
         dspOrder = newDSPOrder;
     
-    //convert dspOrder into an array of pointers to the DSP objects
-    DSP_Pointers dspPointers;
-    dspPointers.fill({});
-    
-    //We reasign the objects to their pointers if needed
-    for(size_t i = 0; i < dspPointers.size(); ++i)
-    {
-        switch (dspOrder[i])
-        {
-            case DSP_Option::Phase:
-                dspPointers[i].processor = &phaser;
-                dspPointers[i].bypassed = phaserBypass->get();
-                break;
-            case DSP_Option::Chorus:
-                dspPointers[i].processor = &chorus;
-                dspPointers[i].bypassed = chorusBypass->get();
-                break;
-            case DSP_Option::OverDrive:
-                dspPointers[i].processor = &overdrive;
-                dspPointers[i].bypassed = overdriveBypass->get();
-                break;
-            case DSP_Option::LadderFilter:
-                dspPointers[i].processor = &ladderFilter;
-                dspPointers[i].bypassed = ladderFilterBypass->get();
-                break;
-            case DSP_Option::GeneralFilter:
-                dspPointers[i].processor = &generalFilter;
-                dspPointers[i].bypassed = generalFilterBypass->get();
-                break;
-            case DSP_Option::END_OF_LIST:
-                jassertfalse;
-                break;
-        }
-    }
-    
-    //Now, with the list up to date we can process
     auto block = juce::dsp::AudioBlock<float>(buffer);
-    auto context = juce::dsp::ProcessContextReplacing<float>(block);
-    
-    for(size_t i = 0; i < dspPointers.size(); ++i)
-    {
-        if(dspPointers[i].processor != nullptr)
-        {
-            juce::ScopedValueSetter<bool> svs(context.isBypassed, dspPointers[i].bypassed);
-#if VERIFY_BYPASS_FUNCTIONALITY
-            if( context.isBypassed )
-            {
-                jassertfalse;
-            }
-            
-            if( dspPointers[i].processor == &generalFilter )
-            {
-                continue;
-            }
-#endif
-            dspPointers[i].processor->process(context);
-        }
-    }
+    leftChannel.process(block.getSingleChannelBlock(0), dspOrder);
+    rightChannel.process(block.getSingleChannelBlock(1), dspOrder);
 }
 
 //==============================================================================
