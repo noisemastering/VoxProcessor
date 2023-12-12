@@ -79,48 +79,7 @@ public:
     using DSP_Order = std::array<DSP_Option, static_cast<size_t>(DSP_Option::END_OF_LIST)>;
     
     
-    template<typename DSP>
-    struct DSP_Choice : juce::dsp::ProcessorBase
-    {
-        void prepare(const juce::dsp::ProcessSpec& spec) override
-        {
-            dsp.prepare(spec);
-        }
-        void process(const juce::dsp::ProcessContextReplacing<float>& context) override
-        {
-            dsp.process(context);
-        }
-        void reset() override
-        {
-            dsp.reset();
-        }
-        
-        DSP dsp;
-    };
     
-    struct MonoChannelDSP
-    {
-        MonoChannelDSP(VoxProcessorAudioProcessor& proc) : p(proc){}
-            
-        DSP_Choice<juce::dsp::Phaser<float>> phaser;
-        DSP_Choice<juce::dsp::Chorus<float>> chorus;
-        DSP_Choice<juce::dsp::LadderFilter<float>> overdrive, ladderFilter;
-        DSP_Choice<juce::dsp::IIR::Filter<float>> generalFilter;
-            
-        void prepare(const juce::dsp::ProcessSpec& spec);
-        void updateDSPFromParams();
-        void process(juce::dsp::AudioBlock<float> block, const DSP_Order& dspOrder);
-        
-    private:
-        
-        VoxProcessorAudioProcessor& p;
-        
-        GeneralFilterMode filterMode = GeneralFilterMode::END_OF_LIST;
-        float filterFreq = 0.f, filterQ = 0.f, filterGain= -100.f;
-    };
-    
-    MonoChannelDSP leftChannel{*this};
-    MonoChannelDSP rightChannel{*this};
     
     struct ProcessState
     {
@@ -170,6 +129,48 @@ private:
     //==============================================================================
     DSP_Order dspOrder;
     
+    template<typename DSP>
+    struct DSP_Choice : juce::dsp::ProcessorBase
+    {
+        void prepare(const juce::dsp::ProcessSpec& spec) override
+        {
+            dsp.prepare(spec);
+        }
+        void process(const juce::dsp::ProcessContextReplacing<float>& context) override
+        {
+            dsp.process(context);
+        }
+        void reset() override
+        {
+            dsp.reset();
+        }
+        
+        DSP dsp;
+    };
+    
+    struct MonoChannelDSP
+    {
+        MonoChannelDSP(VoxProcessorAudioProcessor& proc) : p(proc){}
+            
+        DSP_Choice<juce::dsp::Phaser<float>> phaser;
+        DSP_Choice<juce::dsp::Chorus<float>> chorus;
+        DSP_Choice<juce::dsp::LadderFilter<float>> overdrive, ladderFilter;
+        DSP_Choice<juce::dsp::IIR::Filter<float>> generalFilter;
+            
+        void prepare(const juce::dsp::ProcessSpec& spec);
+        void updateDSPFromParams();
+        void process(juce::dsp::AudioBlock<float> block, const DSP_Order& dspOrder);
+        
+    private:
+        
+        VoxProcessorAudioProcessor& p;
+        
+        GeneralFilterMode filterMode = GeneralFilterMode::END_OF_LIST;
+        float filterFreq = 0.f, filterQ = 0.f, filterGain= -100.f;
+    };
+    
+    MonoChannelDSP leftChannel{*this};
+    MonoChannelDSP rightChannel{*this};
     
     template<typename ParamType, typename Params, typename Funcs>
     void initCachedParams(Params paramsArr, Funcs funcsArray)

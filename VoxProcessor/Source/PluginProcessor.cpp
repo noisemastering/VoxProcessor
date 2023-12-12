@@ -358,11 +358,11 @@ void VoxProcessorAudioProcessor::MonoChannelDSP::updateDSPFromParams()
         
         if (coefficients != nullptr)
         {
-            if (generalFilter.dsp.coefficients->coefficients.size() != coefficients->coefficients.size())
-            {
-                jassertfalse;
-            }
-            
+//            if (generalFilter.dsp.coefficients->coefficients.size() != coefficients->coefficients.size())
+//            {
+//                jassertfalse;
+//            }
+//            
             *generalFilter.dsp.coefficients = *coefficients;
             generalFilter.reset();
         }
@@ -649,8 +649,8 @@ void VoxProcessorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     //[DONE]]: update DSP here from audio parameters
     //[DONE]: save/load settings
     //[DONE]: save/load dsp order
-    //TODO: filters are mono, not stereo
-    //TODO: update generalFilter coefficients
+    //[DONE]: filters are mono, not stereo
+    //[DONE]: update generalFilter coefficients
     //TODO: add smoothers for all param updates
     //TODO: save/load DSP order
     //TODO: Drag-To-Reorder GUI
