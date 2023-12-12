@@ -123,7 +123,24 @@ public:
     juce::AudioParameterBool* ladderFilterBypass = nullptr;
     juce::AudioParameterBool* generalFilterBypass = nullptr;
     
-    
+    juce::SmoothedValue<float>
+    phaserRateHzSmoother,
+    phaserCenterFreqHzSmoother,
+    phaserDepthPercentSmoother,
+    phaserFeedbackPercentSmoother,
+    phaserMixPercentSmoother,
+    chorusRateHzSmoother,
+    chorusDepthPercentSmoother,
+    chorusCenterDelayMsSmoother,
+    chorusFeedbackPercentSmoother,
+    chorusMixPercentSmoother,
+    overdriveSaturationSmoother,
+    ladderFilterCutoffHzSmoother,
+    ladderFilterResonanceSmoother,
+    ladderFilterDriveSmoother,
+    generalFilterFreqHzSmoother,
+    generalFilterQualitySmoother,
+    generalFilterGainSmoother;
     
 private:
     //==============================================================================
@@ -188,6 +205,15 @@ private:
     DSP_Choice<juce::dsp::LadderFilter<float>> overdrive, ladderFilter;
 //    DSP_Choice<juce::dsp::IIR::Filter<float>> generalFilter;
 
+    std::vector<juce::SmoothedValue<float>*> getSmoothers();
+    
+    enum class SmootherUpdateMode
+    {
+        initialize,
+        liveInRealTime
+    };
+    void updateSmoothersFromParams(int numSamplesToSkip, SmootherUpdateMode init);
+    
 #define VERIFY_BYPASS_FUNCTIONALITY false
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (VoxProcessorAudioProcessor)
     
