@@ -724,7 +724,7 @@ void VoxProcessorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     //[DONE]: save/load dsp order
     //[DONE]: filters are mono, not stereo
     //[DONE]: update generalFilter coefficients
-    //TODO: add smoothers for all param updates
+    //[DONE]: add smoothers for all param updates
     //TODO: save/load DSP order
     //TODO: Drag-To-Reorder GUI
     //TODO: GUI design for each DSP instance?
@@ -796,8 +796,8 @@ bool VoxProcessorAudioProcessor::hasEditor() const
 
 juce::AudioProcessorEditor* VoxProcessorAudioProcessor::createEditor()
 {
-    return new juce::GenericAudioProcessorEditor(*this);
-//    return new VoxProcessorAudioProcessorEditor (*this);
+//    return new juce::GenericAudioProcessorEditor(*this);
+    return new VoxProcessorAudioProcessorEditor (*this);
 }
 
 template<>
