@@ -31,10 +31,28 @@ static juce::String getDSPOptionName(VoxProcessorAudioProcessor::DSP_Option opti
 
 
 
-juce::TabBarButton* ExtendedTabbedButtonBar::createTabButton(const juce::String &tabName, int tabIndex)
+//==============================================================================
+ExtendedTabbedButtonBar::ExtendedTabbedButtonBar() :
+juce::TabbedButtonBar(juce::TabbedButtonBar::Orientation::TabsAtTop)
+{
+    
+}
+
+bool ExtendedTabbedButtonBar::isInterestedInDragSource (const SourceDetails& dragSourceDetails)
+{
+    return false;
+}
+
+void ExtendedTabbedButtonBar::itemDropped (const SourceDetails& dragSourceDetails)
+{
+    
+}
+
+juce::TabBarButton* ExtendedTabbedButtonBar::createTabButton (const juce::String& tabName, int tabIndex)
 {
     return new ExtendedTabBarButton(tabName, *this);
 }
+
 
 HorizontalConstrainer::HorizontalConstrainer(std::function<juce::Rectangle<int>()> confinerBoundsGetter,
                                              std::function<juce::Rectangle<int>()> confineeBoundsGetter) :

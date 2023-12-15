@@ -17,12 +17,12 @@
 
 struct ExtendedTabbedButtonBar : juce::TabbedButtonBar, juce::DragAndDropTarget
 {
-    ExtendedTabbedButtonBar() : juce::TabbedButtonBar(TabbedButtonBar::Orientation::TabsAtTop){}
+    ExtendedTabbedButtonBar();
     
-    bool isInterestedInDragSource(const SourceDetails& dragSourceDetails) override {return false;}
-    void itemDropped(const SourceDetails& dragSourceDetails) override {}
+    bool isInterestedInDragSource (const SourceDetails& dragSourceDetails) override;
+    void itemDropped (const SourceDetails& dragSourceDetails) override;
     
-    juce::TabBarButton* createTabButton(const juce::String& tabName, int tabIndex) override;
+    juce::TabBarButton* createTabButton (const juce::String& tabName, int tabIndex) override;
 };
 
 struct HorizontalConstrainer : juce::ComponentBoundsConstrainer
