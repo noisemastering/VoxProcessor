@@ -15,12 +15,17 @@
 /**
 */
 
-struct ExtendedTabbedButtonBar : juce::TabbedButtonBar, juce::DragAndDropTarget
+struct ExtendedTabbedButtonBar : juce::TabbedButtonBar, juce::DragAndDropTarget, juce::DragAndDropContainer
 {
     ExtendedTabbedButtonBar();
     
     bool isInterestedInDragSource (const SourceDetails& dragSourceDetails) override;
+    void itemDragEnter(const SourceDetails& dragSourceDetails) override;
+    void itemDragMove (const SourceDetails& dragSourceDetails) override;
+    void itemDragExit (const SourceDetails& dragSourceDetails) override;
     void itemDropped (const SourceDetails& dragSourceDetails) override;
+    
+    void mouseDown(const juce::MouseEvent& e) override;
     
     juce::TabBarButton* createTabButton (const juce::String& tabName, int tabIndex) override;
 };
