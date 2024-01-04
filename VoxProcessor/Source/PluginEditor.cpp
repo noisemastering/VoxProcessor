@@ -49,25 +49,45 @@ bool ExtendedTabbedButtonBar::isInterestedInDragSource (const SourceDetails& dra
 
 void ExtendedTabbedButtonBar::itemDragExit(const SourceDetails &dragSourceDetails)
 {
-    DBG( "ExtendedTabbedButtonBar::itemDragExit");
+//    DBG( "ExtendedTabbedButtonBar::itemDragExit");
     juce::DragAndDropTarget::itemDragExit(dragSourceDetails);
 }
 
 void ExtendedTabbedButtonBar::itemDropped (const SourceDetails& dragSourceDetails)
 {
-    DBG("Item dropped");
+//    DBG("Item dropped");
     //Find the dropped item, lock the position in.
+    resized();
+    
+    //This is to modify tab order
+    auto tabs = getTabs();
+    VoxProcessorAudioProcessor::DSP_Order newOrder;
+    
+    jassert(tabs.size() == newOrder.size());
+    for (size_t i = 0; i < tabs.size(); ++i)
+    {
+        auto tab = tabs[static_cast<int>(i)];
+        if (auto* etbb = dynamic_cast<ExtendedTabBarButton*>(tab)) {
+            newOrder[i] = etbb->getOption();
+        }
+    }
+    
+    listeners.call([newOrder](Listener& l)
+    {
+        l.tabbedOrderChanged(newOrder);
+    });
+    
 }
 
 void ExtendedTabbedButtonBar::itemDragEnter(const SourceDetails &dragSourceDetails)
 {
-    DBG("ExtendedTabbedButtonBar::itemDragEnter");
+//    DBG("ExtendedTabbedButtonBar::itemDragEnter");
     juce::DragAndDropTarget::itemDragEnter(dragSourceDetails);
 }
 
 void ExtendedTabbedButtonBar::itemDragMove(const SourceDetails& dragSourceDetails)
 {
-    DBG( "ETBB::itemDragMove" );
+//    DBG( "ETBB::itemDragMove" );
     if(auto tabBarBeingDragged = dynamic_cast<ExtendedTabBarButton*>( dragSourceDetails.sourceComponent.get()) )
     {
         //find tabBarBeingDragged in the tabs[] container.
@@ -86,7 +106,7 @@ void ExtendedTabbedButtonBar::itemDragMove(const SourceDetails& dragSourceDetail
         }
         
         //now search
-        auto idx = tabs.indexOf(tabBarBeingDragged);
+        auto idx = findDraggedItemIndex(dragSourceDetails);
         if( idx == -1 )
         {
             DBG("failed to find tab being dragged in list of tabs");
@@ -137,20 +157,45 @@ void ExtendedTabbedButtonBar::itemDragMove(const SourceDetails& dragSourceDetail
 
 void ExtendedTabbedButtonBar::mouseDown(const juce::MouseEvent& e)
 {
-    DBG("ExtendedTabbedButtonBar::mouseDown");
+//    DBG("ExtendedTabbedButtonBar::mouseDown");
     if(auto tabBarBeingDragged = dynamic_cast<ExtendedTabBarButton*>(e.originalComponent))
     {
         startDragging(tabBarBeingDragged->TabBarButton::getTitle(),tabBarBeingDragged);
     }
 }
 
-juce::TabBarButton* ExtendedTabbedButtonBar::createTabButton (const juce::String& tabName, int tabIndex)
+
+
+
+juce::TabBarButton* ExtendedTabbedButtonBar::findDraggedItem(const SourceDetails &dragSourceDetails)
 {
-    auto etbb = std::make_unique<ExtendedTabBarButton>(tabName, *this);
-    etbb->addMouseListener(this, false);
-    return etbb.release();
+    return getTabButton(findDraggedItemIndex(dragSourceDetails));
 }
 
+int ExtendedTabbedButtonBar::findDraggedItemIndex(const SourceDetails &dragSourceDetails)
+{
+    if(auto tabBarBeingDragged = dynamic_cast<ExtendedTabBarButton*>(dragSourceDetails.sourceComponent.get()))
+    {
+        auto tabs = getTabs();
+        
+        auto idx = tabs.indexOf(tabBarBeingDragged);
+        return  idx;
+    }
+    
+    return -1;
+}
+
+juce::Array<juce::TabBarButton*> ExtendedTabbedButtonBar::getTabs()
+{
+    auto numTabs = getNumTabs();
+    auto tabs = juce::Array<juce::TabBarButton*>();
+    tabs.resize(numTabs);
+    for (int i = 0; i < numTabs; ++i) {
+        tabs.getReference(i) = getTabButton(i);
+    }
+    
+    return tabs;
+}
 
 HorizontalConstrainer::HorizontalConstrainer(std::function<juce::Rectangle<int>()> confinerBoundsGetter,
                                              std::function<juce::Rectangle<int>()> confineeBoundsGetter) :
@@ -184,7 +229,10 @@ void HorizontalConstrainer::checkBounds(juce::Rectangle<int>& bounds,
     }
 }
 
-ExtendedTabBarButton::ExtendedTabBarButton(const juce::String& name, juce::TabbedButtonBar& owner) : juce::TabBarButton (name, owner)
+ExtendedTabBarButton::ExtendedTabBarButton(const juce::String& name,
+                                           juce::TabbedButtonBar& owner,
+                                           VoxProcessorAudioProcessor::DSP_Option o) :
+                                                                                        juce::TabBarButton (name, owner)
 {
     constrainer = std::make_unique<HorizontalConstrainer>([&owner]()
     {
@@ -196,6 +244,46 @@ ExtendedTabBarButton::ExtendedTabBarButton(const juce::String& name, juce::Tabbe
     });
     constrainer->setMinimumOnscreenAmounts(0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff);
 }
+
+static VoxProcessorAudioProcessor::DSP_Option getDSPOptionFromName(juce::String name)
+{
+    if (name == "PHASE")
+        return VoxProcessorAudioProcessor::DSP_Option::Phase;
+    if (name == "CHORUS")
+        return VoxProcessorAudioProcessor::DSP_Option::Chorus;
+    if (name == "OVERDRIVE")
+        return VoxProcessorAudioProcessor::DSP_Option::OverDrive;
+    if (name == "LADDERFILTER")
+        return VoxProcessorAudioProcessor::DSP_Option::LadderFilter;
+    if (name == "GEN FILTER")
+        return VoxProcessorAudioProcessor::DSP_Option::GeneralFilter;
+    
+    return VoxProcessorAudioProcessor::DSP_Option::END_OF_LIST;
+}
+
+juce::TabBarButton* ExtendedTabbedButtonBar::createTabButton (const juce::String& tabName, int tabIndex)
+{
+    auto dspOption = getDSPOptionFromName(tabName);
+    auto etbb = std::make_unique<ExtendedTabBarButton>(tabName, *this, dspOption);
+    etbb->addMouseListener(this, false);
+    return etbb.release();
+}
+
+void ExtendedTabbedButtonBar::addListener(ExtendedTabbedButtonBar::Listener* l)
+{
+    listeners.add(l);
+}
+
+void ExtendedTabbedButtonBar::removeListener(ExtendedTabbedButtonBar::Listener* l)
+{
+    listeners.remove(l);
+}
+
+void VoxProcessorAudioProcessorEditor::tabbedOrderChanged(VoxProcessorAudioProcessor::DSP_Order newOrder)
+{
+    audioProcessor.dspOrderFifo.push(newOrder);
+}
+
 
 //==============================================================================
 VoxProcessorAudioProcessorEditor::VoxProcessorAudioProcessorEditor (VoxProcessorAudioProcessor& p)
@@ -227,11 +315,14 @@ VoxProcessorAudioProcessorEditor::VoxProcessorAudioProcessorEditor (VoxProcessor
     addAndMakeVisible(dspOprderButton);
     addAndMakeVisible(tabbedComponent);
     
+    tabbedComponent.addListener(this);
+    
     setSize (400, 300);
 }
 
 VoxProcessorAudioProcessorEditor::~VoxProcessorAudioProcessorEditor()
 {
+    tabbedComponent.removeListener(this);
 }
 
 //==============================================================================

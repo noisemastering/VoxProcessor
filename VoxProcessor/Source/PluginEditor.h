@@ -28,6 +28,22 @@ struct ExtendedTabbedButtonBar : juce::TabbedButtonBar, juce::DragAndDropTarget,
     void mouseDown(const juce::MouseEvent& e) override;
     
     juce::TabBarButton* createTabButton (const juce::String& tabName, int tabIndex) override;
+    
+    struct Listener
+    {
+        virtual ~Listener() = default;
+        virtual void tabbedOrderChanged(VoxProcessorAudioProcessor::DSP_Order newOrder) = 0;
+    };
+    
+    void addListener(Listener* l);
+    void removeListener(Listener* l);
+    
+private:
+    juce::TabBarButton* findDraggedItem(const SourceDetails& dragSourceDetails);
+    int findDraggedItemIndex(const SourceDetails& dragSourceDetails);
+    juce::Array<juce::TabBarButton*> getTabs();
+    juce::ListenerList<Listener> listeners;
+    
 };
 
 struct HorizontalConstrainer : juce::ComponentBoundsConstrainer
@@ -51,7 +67,10 @@ private:
 
 struct ExtendedTabBarButton : juce::TabBarButton
 {
-    ExtendedTabBarButton(const juce::String& name, juce::TabbedButtonBar& owner);
+    ExtendedTabBarButton(const juce::String& name, 
+                         juce::TabbedButtonBar& owner,
+                         VoxProcessorAudioProcessor::DSP_Option o);
+    
     juce::ComponentDragger dragger;
     std::unique_ptr<HorizontalConstrainer> constrainer;
     
@@ -66,9 +85,14 @@ struct ExtendedTabBarButton : juce::TabBarButton
     {
         dragger.dragComponent(this, e, constrainer.get());
     }
+    
+    VoxProcessorAudioProcessor::DSP_Option getOption() const {return option;}
+    
+private:
+    VoxProcessorAudioProcessor::DSP_Option option;
 };
 
-class VoxProcessorAudioProcessorEditor  : public juce::AudioProcessorEditor
+class VoxProcessorAudioProcessorEditor  : public juce::AudioProcessorEditor, ExtendedTabbedButtonBar::Listener
 {
 public:
     VoxProcessorAudioProcessorEditor (VoxProcessorAudioProcessor&);
@@ -77,6 +101,8 @@ public:
     //==============================================================================
     void paint (juce::Graphics&) override;
     void resized() override;
+    
+    void tabbedOrderChanged(VoxProcessorAudioProcessor::DSP_Order) override;
 
 private:
     // This reference is provided as a quick way for your editor to
