@@ -9,7 +9,7 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
-static juce::String getDSPOptionName(VoxProcessorAudioProcessor::DSP_Option option)
+static juce::String getNameFromDSPOption(VoxProcessorAudioProcessor::DSP_Option option)
 {
     switch(option)
     {
@@ -250,6 +250,15 @@ ExtendedTabBarButton::ExtendedTabBarButton(const juce::String& name,
     constrainer->setMinimumOnscreenAmounts(0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff);
 }
 
+int ExtendedTabBarButton::getBestTabLength(int depth)
+{
+    auto bestWidth = getLookAndFeel().getTabButtonBestWidth(*this, depth);
+    
+    auto& bar = getTabbedButtonBar();
+    
+    return juce::jmax(bestWidth, bar.getWidth()/bar.getNumTabs());
+}
+
 static VoxProcessorAudioProcessor::DSP_Option getDSPOptionFromName(juce::String name)
 {
     if (name == "PHASE")
@@ -309,7 +318,7 @@ VoxProcessorAudioProcessorEditor::VoxProcessorAudioProcessorEditor (VoxProcessor
         {
             auto entry = r.nextInt(range);
             v = static_cast<VoxProcessorAudioProcessor::DSP_Option>(entry);
-            tabbedComponent.addTab(getDSPOptionName(v), juce::Colours::orange, -1);
+            tabbedComponent.addTab(getNameFromDSPOption(v), juce::Colours::orange, -1);
         }
         DBG(juce::Base64::toBase64(dspOrder.data(), dspOrder.size()));
 //        jassertfalse;
@@ -322,7 +331,7 @@ VoxProcessorAudioProcessorEditor::VoxProcessorAudioProcessorEditor (VoxProcessor
     
     tabbedComponent.addListener(this);
     
-    setSize (400, 300);
+    setSize (600, 400);
 }
 
 VoxProcessorAudioProcessorEditor::~VoxProcessorAudioProcessorEditor()

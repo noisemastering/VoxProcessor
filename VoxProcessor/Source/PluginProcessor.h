@@ -78,9 +78,6 @@ public:
     
     using DSP_Order = std::array<DSP_Option, static_cast<size_t>(DSP_Option::END_OF_LIST)>;
     
-    
-    
-    
     struct ProcessState
     {
         juce::dsp::ProcessorBase* processor = nullptr;
