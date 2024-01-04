@@ -725,8 +725,8 @@ void VoxProcessorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     //[DONE]: filters are mono, not stereo
     //[DONE]: update generalFilter coefficients
     //[DONE]: add smoothers for all param updates
-    //TODO: save/load DSP order
-    //TODO: Drag-To-Reorder GUI
+    //[DONE]: save/load DSP order
+    //[DONE]: Drag-To-Reorder GUI
     //TODO: GUI design for each DSP instance?
     //TODO: metering
     //TODO: prepare all DSP

@@ -35,7 +35,12 @@ static juce::String getDSPOptionName(VoxProcessorAudioProcessor::DSP_Option opti
 ExtendedTabbedButtonBar::ExtendedTabbedButtonBar() :
 juce::TabbedButtonBar(juce::TabbedButtonBar::Orientation::TabsAtTop)
 {
+    auto img = juce::Image(juce::Image::PixelFormat::SingleChannel, 1, 1, true);
     
+    auto gfx = juce::Graphics(img);
+    gfx.fillAll(juce::Colours::transparentWhite);
+    
+    dragImage = juce::ScaledImage(img, 1.0);
 }
 
 bool ExtendedTabbedButtonBar::isInterestedInDragSource (const SourceDetails& dragSourceDetails)
@@ -160,7 +165,7 @@ void ExtendedTabbedButtonBar::mouseDown(const juce::MouseEvent& e)
 //    DBG("ExtendedTabbedButtonBar::mouseDown");
     if(auto tabBarBeingDragged = dynamic_cast<ExtendedTabBarButton*>(e.originalComponent))
     {
-        startDragging(tabBarBeingDragged->TabBarButton::getTitle(),tabBarBeingDragged);
+        startDragging(tabBarBeingDragged->TabBarButton::getTitle(),tabBarBeingDragged, dragImage);
     }
 }
 
