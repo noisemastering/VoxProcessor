@@ -92,7 +92,7 @@ void ExtendedTabbedButtonBar::itemDragEnter(const SourceDetails &dragSourceDetai
 
 void ExtendedTabbedButtonBar::itemDragMove(const SourceDetails& dragSourceDetails)
 {
-//    DBG( "ETBB::itemDragMove" );
+    
     if(auto tabBarBeingDragged = dynamic_cast<ExtendedTabBarButton*>( dragSourceDetails.sourceComponent.get()) )
     {
         //find tabBarBeingDragged in the tabs[] container.
@@ -129,10 +129,12 @@ void ExtendedTabbedButtonBar::itemDragMove(const SourceDetails& dragSourceDetail
         auto previousTab = getTabButton( previousTabIndex );
         auto nextTab = getTabButton( nextTabIndex );
         
+        auto centerX = tabBarBeingDragged->getBounds().getCentreX();
+        
         if( previousTab == nullptr && nextTab != nullptr )
         {
             //you're in the 0th position
-            if( tabBarBeingDragged->getX() > nextTab->getX() + nextTab->getWidth() * 0.5 )
+            if( centerX > nextTab->getX() )
             {
                 moveTab(idx, nextTabIndex);
             }
@@ -140,7 +142,7 @@ void ExtendedTabbedButtonBar::itemDragMove(const SourceDetails& dragSourceDetail
         else if( previousTab != nullptr && nextTab == nullptr )
         {
             //you're in the last position
-            if( tabBarBeingDragged->getX() < previousTab->getX() + previousTab->getWidth() * 0.5 )
+            if( centerX < previousTab->getRight() )
             {
                 moveTab(idx, previousTabIndex);
             }
@@ -148,15 +150,16 @@ void ExtendedTabbedButtonBar::itemDragMove(const SourceDetails& dragSourceDetail
         else
         {
             //you're in the middle
-            if( tabBarBeingDragged->getX() > nextTab->getX() + nextTab->getWidth() * 0.5 )
+            if( centerX > nextTab->getX() )
             {
                 moveTab(idx, nextTabIndex);
             }
-            else if( tabBarBeingDragged->getX() < previousTab->getX() + previousTab->getWidth() * 0.5 )
+            else if( centerX < previousTab->getRight() )
             {
                 moveTab(idx, previousTabIndex);
             }
         }
+        tabBarBeingDragged->toFront(true);
     }
 }
 
