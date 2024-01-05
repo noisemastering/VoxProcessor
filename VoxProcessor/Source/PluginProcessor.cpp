@@ -89,6 +89,7 @@ VoxProcessorAudioProcessor::VoxProcessorAudioProcessor()
     {
         dspOrder[i] = static_cast<DSP_Option>(i);
     }
+    restoreDspOrderFifo.push(dspOrder);
     
     auto floatParams = std::array
     {
