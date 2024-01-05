@@ -308,31 +308,7 @@ VoxProcessorAudioProcessorEditor::VoxProcessorAudioProcessorEditor (VoxProcessor
 {
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
-    dspOprderButton.onClick = [this]()
-    {
-        juce::Random r;
-        VoxProcessorAudioProcessor::DSP_Order dspOrder;
-        
-        auto range = juce::Range<int>(static_cast<int>(VoxProcessorAudioProcessor::DSP_Option::Phase),
-                                      static_cast<int>(VoxProcessorAudioProcessor::DSP_Option::END_OF_LIST));
-        tabbedComponent.clearTabs();
-        
-        for( auto& v : dspOrder )
-        {
-            auto entry = r.nextInt(range);
-            v = static_cast<VoxProcessorAudioProcessor::DSP_Option>(entry);
-            
-            auto name = getNameFromDSPOption(v);
-            DBG("Creating tab: " << name);
-            tabbedComponent.addTab(getNameFromDSPOption(v), juce::Colours::orange, -1);
-        }
-        DBG(juce::Base64::toBase64(dspOrder.data(), dspOrder.size()));
-//        jassertfalse;
-        
-        audioProcessor.dspOrderFifo.push(dspOrder);
-    };
     
-    addAndMakeVisible(dspOprderButton);
     addAndMakeVisible(tabbedComponent);
     
     tabbedComponent.addListener(this);
@@ -361,7 +337,6 @@ void VoxProcessorAudioProcessorEditor::resized()
     // This is generally where you'll want to lay out the positions of any
     // subcomponents in your editor..
     auto bounds = getLocalBounds();
-    dspOprderButton.setBounds(bounds.removeFromTop(30).withSizeKeepingCentre(150, 30));
     bounds.removeFromTop(10);
     tabbedComponent.setBounds(bounds.withHeight(30));
 }

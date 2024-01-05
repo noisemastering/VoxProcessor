@@ -115,8 +115,6 @@ private:
     // access the processor object that created it.
     VoxProcessorAudioProcessor& audioProcessor;
     
-    juce::TextButton dspOprderButton{"dsp order"};
-    
 //    juce::TabbedComponent tabbedComponent { juce::TabbedButtonBar::Orientation::TabsAtTop};
     ExtendedTabbedButtonBar tabbedComponent;
     void addTabsFromDSPOrder(VoxProcessorAudioProcessor::DSP_Order);
