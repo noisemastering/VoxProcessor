@@ -318,6 +318,9 @@ VoxProcessorAudioProcessorEditor::VoxProcessorAudioProcessorEditor (VoxProcessor
         {
             auto entry = r.nextInt(range);
             v = static_cast<VoxProcessorAudioProcessor::DSP_Option>(entry);
+            
+            auto name = getNameFromDSPOption(v);
+            DBG("Creating tab: " << name);
             tabbedComponent.addTab(getNameFromDSPOption(v), juce::Colours::orange, -1);
         }
         DBG(juce::Base64::toBase64(dspOrder.data(), dspOrder.size()));
@@ -330,7 +333,7 @@ VoxProcessorAudioProcessorEditor::VoxProcessorAudioProcessorEditor (VoxProcessor
     addAndMakeVisible(tabbedComponent);
     
     tabbedComponent.addListener(this);
-    
+    startTimer(30);
     setSize (600, 400);
 }
 
@@ -347,7 +350,7 @@ void VoxProcessorAudioProcessorEditor::paint (juce::Graphics& g)
 
     g.setColour (juce::Colours::white);
     g.setFont (15.0f);
-    g.drawFittedText ("Hello World!", getLocalBounds(), juce::Justification::centred, 1);
+    g.drawFittedText ("Morris Sound", getLocalBounds(), juce::Justification::centred, 1);
 }
 
 void VoxProcessorAudioProcessorEditor::resized()
@@ -358,4 +361,34 @@ void VoxProcessorAudioProcessorEditor::resized()
     dspOprderButton.setBounds(bounds.removeFromTop(30).withSizeKeepingCentre(150, 30));
     bounds.removeFromTop(10);
     tabbedComponent.setBounds(bounds.withHeight(30));
+}
+
+void VoxProcessorAudioProcessorEditor::timerCallback()
+{
+    if(audioProcessor.restoreDspOrderFifo.getNumAvailableForReading() == 0)
+        return;
+    
+    using T = VoxProcessorAudioProcessor::DSP_Order;
+    T newOrder;
+    newOrder.fill(VoxProcessorAudioProcessor::DSP_Option::END_OF_LIST);
+    auto empty = newOrder;
+    while (audioProcessor.restoreDspOrderFifo.pull(newOrder))
+    {
+        ;
+    }
+    
+    if(newOrder != empty)
+    {
+        addTabsFromDSPOrder(newOrder);
+    }
+}
+
+void VoxProcessorAudioProcessorEditor::addTabsFromDSPOrder(VoxProcessorAudioProcessor::DSP_Order newOrder)
+{
+    tabbedComponent.clearTabs();
+    for (auto v : newOrder) {
+        tabbedComponent.addTab(getNameFromDSPOption(v), juce::Colours::orange, -1);
+    }
+    
+    audioProcessor.dspOrderFifo.push(newOrder);
 }

@@ -95,7 +95,9 @@ private:
     VoxProcessorAudioProcessor::DSP_Option option;
 };
 
-class VoxProcessorAudioProcessorEditor  : public juce::AudioProcessorEditor, ExtendedTabbedButtonBar::Listener
+class VoxProcessorAudioProcessorEditor  : public juce::AudioProcessorEditor, 
+                                                ExtendedTabbedButtonBar::Listener,
+                                                juce::Timer
 {
 public:
     VoxProcessorAudioProcessorEditor (VoxProcessorAudioProcessor&);
@@ -107,6 +109,7 @@ public:
     
     void tabbedOrderChanged(VoxProcessorAudioProcessor::DSP_Order) override;
 
+    void timerCallback() override;
 private:
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
@@ -116,6 +119,7 @@ private:
     
 //    juce::TabbedComponent tabbedComponent { juce::TabbedButtonBar::Orientation::TabsAtTop};
     ExtendedTabbedButtonBar tabbedComponent;
+    void addTabsFromDSPOrder(VoxProcessorAudioProcessor::DSP_Order);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (VoxProcessorAudioProcessorEditor)
 };
