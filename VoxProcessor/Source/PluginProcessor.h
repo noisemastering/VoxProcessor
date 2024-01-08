@@ -140,6 +140,8 @@ public:
     generalFilterQualitySmoother,
     generalFilterGainSmoother;
     
+    std::vector<juce::RangedAudioParameter*> getParamsForOption(DSP_Option option);
+    
 private:
     //==============================================================================
     DSP_Order dspOrder;
