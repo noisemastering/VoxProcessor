@@ -142,7 +142,7 @@ void ExtendedTabbedButtonBar::itemDragMove(const SourceDetails& dragSourceDetail
         else if( previousTab != nullptr && nextTab == nullptr )
         {
             //you're in the last position
-            if( centerX < previousTab->getRight() )
+            if( centerX < previousTab->getX() )
             {
                 moveTab(idx, previousTabIndex);
             }
@@ -310,6 +310,7 @@ VoxProcessorAudioProcessorEditor::VoxProcessorAudioProcessorEditor (VoxProcessor
     // editor's size to whatever you need it to be.
     
     addAndMakeVisible(tabbedComponent);
+    addAndMakeVisible(dspGUI);
     
     tabbedComponent.addListener(this);
     startTimer(30);
@@ -338,7 +339,9 @@ void VoxProcessorAudioProcessorEditor::resized()
     // subcomponents in your editor..
     auto bounds = getLocalBounds();
     bounds.removeFromTop(10);
-    tabbedComponent.setBounds(bounds.withHeight(30));
+    tabbedComponent.setBounds(bounds.removeFromTop(30));
+    dspGUI.setBounds(bounds);
+    
 }
 
 void VoxProcessorAudioProcessorEditor::timerCallback()

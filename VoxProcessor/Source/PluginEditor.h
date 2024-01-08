@@ -95,6 +95,20 @@ private:
     VoxProcessorAudioProcessor::DSP_Option option;
 };
 
+struct DSP_GUI : juce::Component
+{
+    DSP_GUI(){}
+    
+    void resized() override{}
+    void paint(juce::Graphics& g) override { g.fillAll(juce::Colours::blue); }
+    
+    void rebuildInterface(std::vector<juce::RangedAudioParameter*> params);
+    
+    std::vector<std::unique_ptr<juce::Slider>> sliders;
+    
+    std::vector<std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>> attachment;
+};
+
 class VoxProcessorAudioProcessorEditor  : public juce::AudioProcessorEditor, 
                                                 ExtendedTabbedButtonBar::Listener,
                                                 juce::Timer
@@ -114,6 +128,7 @@ private:
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
     VoxProcessorAudioProcessor& audioProcessor;
+    DSP_GUI dspGUI;
     
 //    juce::TabbedComponent tabbedComponent { juce::TabbedButtonBar::Orientation::TabsAtTop};
     ExtendedTabbedButtonBar tabbedComponent;
