@@ -70,7 +70,7 @@ struct ExtendedTabBarButton : juce::TabBarButton
 {
     ExtendedTabBarButton(const juce::String& name, 
                          juce::TabbedButtonBar& owner,
-                         VoxProcessorAudioProcessor::DSP_Option o);
+                         VoxProcessorAudioProcessor::DSP_Option dspOption);
     
     juce::ComponentDragger dragger;
     std::unique_ptr<HorizontalConstrainer> constrainer;
@@ -97,16 +97,21 @@ private:
 
 struct DSP_GUI : juce::Component
 {
-    DSP_GUI(){}
+    DSP_GUI(VoxProcessorAudioProcessor& proc) : processor(proc) {}
     
-    void resized() override{}
-    void paint(juce::Graphics& g) override { g.fillAll(juce::Colours::blue); }
+    void resized() override;
+    void paint(juce::Graphics& g) override;
     
     void rebuildInterface(std::vector<juce::RangedAudioParameter*> params);
     
+    VoxProcessorAudioProcessor& processor;
     std::vector<std::unique_ptr<juce::Slider>> sliders;
+    std::vector<std::unique_ptr<juce::ComboBox>> comboBoxes;
+    std::vector<std::unique_ptr<juce::Button>> buttons;
     
-    std::vector<std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>> attachment;
+    std::vector<std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>> sliderAttachments;
+    std::vector<std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment>> comboBoxAttachments;
+    std::vector<std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment>> buttonAttachments;
 };
 
 class VoxProcessorAudioProcessorEditor  : public juce::AudioProcessorEditor, 
@@ -128,11 +133,12 @@ private:
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
     VoxProcessorAudioProcessor& audioProcessor;
-    DSP_GUI dspGUI;
+    DSP_GUI dspGUI { audioProcessor };
     
 //    juce::TabbedComponent tabbedComponent { juce::TabbedButtonBar::Orientation::TabsAtTop};
     ExtendedTabbedButtonBar tabbedComponent;
     void addTabsFromDSPOrder(VoxProcessorAudioProcessor::DSP_Order);
+    void rebuildInterface();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (VoxProcessorAudioProcessorEditor)
 };

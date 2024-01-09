@@ -240,7 +240,9 @@ void HorizontalConstrainer::checkBounds(juce::Rectangle<int>& bounds,
 ExtendedTabBarButton::ExtendedTabBarButton(const juce::String& name,
                                            juce::TabbedButtonBar& owner,
                                            VoxProcessorAudioProcessor::DSP_Option o) :
-                                                                                        juce::TabBarButton (name, owner)
+                                                                                        juce::TabBarButton (name, owner),
+                                                                                        option(o)
+
 {
     constrainer = std::make_unique<HorizontalConstrainer>([&owner]()
     {
@@ -296,11 +298,100 @@ void ExtendedTabbedButtonBar::removeListener(ExtendedTabbedButtonBar::Listener* 
     listeners.remove(l);
 }
 
-void VoxProcessorAudioProcessorEditor::tabbedOrderChanged(VoxProcessorAudioProcessor::DSP_Order newOrder)
+
+
+//============== DSP_GUI =======================================================
+void DSP_GUI::resized()
 {
-    audioProcessor.dspOrderFifo.push(newOrder);
+    //buttons along the top.
+    //combo boxes along the left
+    //sliders take up the rest
+    
+    auto bounds = getLocalBounds();
+    if( ! buttons.empty() )
+    {
+        auto buttonArea = bounds.removeFromTop(30);
+        
+        auto w = buttonArea.getWidth() / buttons.size();
+        for( auto& button : buttons )
+        {
+            button->setBounds( buttonArea.removeFromLeft(static_cast<int>(w)));
+        }
+    }
+    
+    if( ! comboBoxes.empty() )
+    {
+        auto comboArea = bounds.removeFromLeft(150);
+        
+        auto h = juce::jmin(comboArea.getHeight() / static_cast<int>(comboBoxes.size()), 30);
+        for( auto& cb : comboBoxes )
+        {
+            cb->setBounds( comboArea.removeFromTop( static_cast<int>(h) ));
+        }
+    }
+    
+    if( ! sliders.empty() )
+    {
+        auto w = bounds.getWidth() / sliders.size();
+        for( auto& s : sliders )
+        {
+            s->setBounds( bounds.removeFromLeft(static_cast<int>(w)) );
+        }
+    }
 }
 
+void DSP_GUI::paint(juce::Graphics &g)
+{
+    g.fillAll(juce::Colours::green);
+}
+
+void DSP_GUI::rebuildInterface(std::vector<juce::RangedAudioParameter*> params)
+{
+    sliderAttachments.clear();
+    comboBoxAttachments.clear();
+    buttonAttachments.clear();
+    
+    sliders.clear();
+    comboBoxes.clear();
+    buttons.clear();
+    
+    for (size_t i = 0; i < params.size(); ++i) 
+    {
+        auto p = params[i];
+        if (auto* choice = dynamic_cast<juce::AudioParameterChoice*>(p)) {
+            comboBoxes.push_back(std::make_unique<juce::ComboBox>());
+            auto& cb = *comboBoxes.back();
+            cb.addItemList(choice->choices, 1);
+            comboBoxAttachments.push_back(std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(processor.apvts, p->getName(100), cb));
+        }
+        else if (auto* toggle = dynamic_cast<juce::AudioParameterBool*>(p))
+        {
+            buttons.push_back(std::make_unique<juce::ToggleButton>("Bypass"));
+            auto& btn = *buttons.back();
+            buttonAttachments.push_back(std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(processor.apvts, p->getName(100), btn));
+        }
+        else
+        {
+            sliders.push_back(std::make_unique<juce::Slider>());
+            auto& slider = *sliders.back();
+            
+            slider.setSliderStyle(juce::Slider::SliderStyle::LinearVertical);
+            
+            sliderAttachments.push_back(std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(processor.apvts, p->getName(100), slider));
+        }
+    }
+    
+    for(auto& slider : sliders)
+        addAndMakeVisible(slider.get());
+    for(auto& cb : comboBoxes)
+        addAndMakeVisible(cb.get());
+    for(auto& btn : buttons)
+        addAndMakeVisible(btn.get());
+    
+    resized();
+}
+
+//=============== END OF DSP_GUI =======================================================
 
 //==============================================================================
 VoxProcessorAudioProcessorEditor::VoxProcessorAudioProcessorEditor (VoxProcessorAudioProcessor& p)
@@ -364,12 +455,35 @@ void VoxProcessorAudioProcessorEditor::timerCallback()
     }
 }
 
+void VoxProcessorAudioProcessorEditor::tabbedOrderChanged(VoxProcessorAudioProcessor::DSP_Order newOrder)
+{
+    rebuildInterface();
+    audioProcessor.dspOrderFifo.push(newOrder);
+}
+
 void VoxProcessorAudioProcessorEditor::addTabsFromDSPOrder(VoxProcessorAudioProcessor::DSP_Order newOrder)
 {
     tabbedComponent.clearTabs();
     for (auto v : newOrder) {
+//        DBG("Current order: " << static_cast<int>(v));
         tabbedComponent.addTab(getNameFromDSPOption(v), juce::Colours::orange, -1);
     }
     
+    rebuildInterface();
     audioProcessor.dspOrderFifo.push(newOrder);
+}
+
+void VoxProcessorAudioProcessorEditor::rebuildInterface()
+{
+    auto currentTabIndex = tabbedComponent.getCurrentTabIndex();
+    std::cout << "Current Tab Index: " << currentTabIndex << std::endl;
+    auto currentTab = tabbedComponent.getTabButton(currentTabIndex);
+    if( auto etab = dynamic_cast<ExtendedTabBarButton*>(currentTab) )
+    {
+        auto option = etab->getOption();
+        DBG("Option value: " << static_cast<int>(option));
+        auto params = audioProcessor.getParamsForOption(option);
+        jassert( ! params.empty() );
+        dspGUI.rebuildInterface(params);
+    }
 }
