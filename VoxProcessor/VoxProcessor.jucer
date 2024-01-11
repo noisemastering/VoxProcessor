@@ -5,6 +5,19 @@
               cppLanguageStandard="20" companyName="Morris Sound">
   <MAINGROUP id="he8TPR" name="VoxProcessor">
     <GROUP id="{5F1CD1AF-CB6A-8EDC-258E-73A56336A416}" name="Source">
+      <GROUP id="{166B8D69-9210-B98F-BC3A-19192F2C9FD5}" name="GUI">
+        <FILE id="BXCZI8" name="CustomButtons.cpp" compile="1" resource="0"
+              file="../SimpleMultiBandComp/Source/GUI/CustomButtons.cpp"/>
+        <FILE id="WckkhZ" name="CustomButtons.h" compile="0" resource="0" file="../SimpleMultiBandComp/Source/GUI/CustomButtons.h"/>
+        <FILE id="kbdGgo" name="LookAndFeel.cpp" compile="1" resource="0" file="../SimpleMultiBandComp/Source/GUI/LookAndFeel.cpp"/>
+        <FILE id="cYEImB" name="LookAndFeel.h" compile="0" resource="0" file="../SimpleMultiBandComp/Source/GUI/LookAndFeel.h"/>
+        <FILE id="jFAxgF" name="RotarySliderWithLabels.cpp" compile="1" resource="0"
+              file="../SimpleMultiBandComp/Source/GUI/RotarySliderWithLabels.cpp"/>
+        <FILE id="pxOJFt" name="RotarySliderWithLabels.h" compile="0" resource="0"
+              file="../SimpleMultiBandComp/Source/GUI/RotarySliderWithLabels.h"/>
+        <FILE id="C1Birt" name="Utilities.cpp" compile="1" resource="0" file="../SimpleMultiBandComp/Source/GUI/Utilities.cpp"/>
+        <FILE id="g7K8XM" name="Utilities.h" compile="0" resource="0" file="../SimpleMultiBandComp/Source/GUI/Utilities.h"/>
+      </GROUP>
       <GROUP id="{220A5077-175B-D3ED-C3B7-E0ADB55B8368}" name="DSP">
         <FILE id="yXzgia" name="Fifo.h" compile="0" resource="0" file="../SimpleMultiBandComp/Source/DSP/Fifo.h"/>
       </GROUP>

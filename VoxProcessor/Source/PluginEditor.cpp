@@ -406,6 +406,13 @@ VoxProcessorAudioProcessorEditor::VoxProcessorAudioProcessorEditor (VoxProcessor
     tabbedComponent.addListener(this);
     startTimer(30);
     setSize (600, 400);
+    
+    //TODO: add bypass button to Tabs
+    //TODO: make selected tab more obvious
+    //TODO: mouse-down on tab (during drag) should change DSP_Gui
+    //TODO: replace vertical sliders with SimpleMBComp rotary Sliders
+    //TODO: replace Comboboxes with SimpleMBComp combobox
+    //TODO: replace bypass buttons with SimpleMBComp bypass buttons.
 }
 
 VoxProcessorAudioProcessorEditor::~VoxProcessorAudioProcessorEditor()
