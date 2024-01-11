@@ -8,6 +8,7 @@
 
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "../../SimpleMultiBandComp/Source/GUI/RotarySliderWithLabels.h"
 
 static juce::String getNameFromDSPOption(VoxProcessorAudioProcessor::DSP_Option option)
 {
@@ -301,7 +302,13 @@ void ExtendedTabbedButtonBar::removeListener(ExtendedTabbedButtonBar::Listener* 
 
 
 //============== DSP_GUI =======================================================
-void DSP_GUI::resized()
+
+DSP_Gui::DSP_Gui(VoxProcessorAudioProcessor& proc) : processor(proc)
+{
+    
+}
+
+void DSP_Gui::resized()
 {
     //buttons along the top.
     //combo boxes along the left
@@ -340,12 +347,12 @@ void DSP_GUI::resized()
     }
 }
 
-void DSP_GUI::paint(juce::Graphics &g)
+void DSP_Gui::paint(juce::Graphics &g)
 {
     g.fillAll(juce::Colours::green);
 }
 
-void DSP_GUI::rebuildInterface(std::vector<juce::RangedAudioParameter*> params)
+void DSP_Gui::rebuildInterface(std::vector<juce::RangedAudioParameter*> params)
 {
     sliderAttachments.clear();
     comboBoxAttachments.clear();
@@ -372,7 +379,7 @@ void DSP_GUI::rebuildInterface(std::vector<juce::RangedAudioParameter*> params)
         }
         else
         {
-            sliders.push_back(std::make_unique<juce::Slider>());
+            sliders.push_back(std::make_unique<RotarySliderWithLabels>(p, p->label, p->getName(100)));
             auto& slider = *sliders.back();
             
             slider.setSliderStyle(juce::Slider::SliderStyle::LinearVertical);

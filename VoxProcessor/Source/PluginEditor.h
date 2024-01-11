@@ -95,9 +95,10 @@ private:
     VoxProcessorAudioProcessor::DSP_Option option;
 };
 
-struct DSP_GUI : juce::Component
+struct RotarySliderWithLabels; //Forward declaration
+struct DSP_Gui : juce::Component
 {
-    DSP_GUI(VoxProcessorAudioProcessor& proc) : processor(proc) {}
+    DSP_Gui(VoxProcessorAudioProcessor& proc);
     
     void resized() override;
     void paint(juce::Graphics& g) override;
@@ -105,7 +106,7 @@ struct DSP_GUI : juce::Component
     void rebuildInterface(std::vector<juce::RangedAudioParameter*> params);
     
     VoxProcessorAudioProcessor& processor;
-    std::vector<std::unique_ptr<juce::Slider>> sliders;
+    std::vector<std::unique_ptr<RotarySliderWithLabels>> sliders;
     std::vector<std::unique_ptr<juce::ComboBox>> comboBoxes;
     std::vector<std::unique_ptr<juce::Button>> buttons;
     
@@ -133,7 +134,7 @@ private:
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
     VoxProcessorAudioProcessor& audioProcessor;
-    DSP_GUI dspGUI { audioProcessor };
+    DSP_Gui dspGUI { audioProcessor };
     
 //    juce::TabbedComponent tabbedComponent { juce::TabbedButtonBar::Orientation::TabsAtTop};
     ExtendedTabbedButtonBar tabbedComponent;
