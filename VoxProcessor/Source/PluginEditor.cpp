@@ -350,7 +350,7 @@ void DSP_Gui::resized()
 
 void DSP_Gui::paint(juce::Graphics &g)
 {
-    g.fillAll(juce::Colours::green);
+    g.fillAll(juce::Colours::black);
 }
 
 void DSP_Gui::rebuildInterface(std::vector<juce::RangedAudioParameter*> params)
@@ -408,7 +408,7 @@ VoxProcessorAudioProcessorEditor::VoxProcessorAudioProcessorEditor (VoxProcessor
 {
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
-    
+    setLookAndFeel(&lookAndFeel);
     addAndMakeVisible(tabbedComponent);
     addAndMakeVisible(dspGUI);
     
@@ -426,6 +426,7 @@ VoxProcessorAudioProcessorEditor::VoxProcessorAudioProcessorEditor (VoxProcessor
 
 VoxProcessorAudioProcessorEditor::~VoxProcessorAudioProcessorEditor()
 {
+    setLookAndFeel(nullptr);
     tabbedComponent.removeListener(this);
 }
 

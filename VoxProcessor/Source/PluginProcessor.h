@@ -86,8 +86,8 @@ public:
     };
     using DSP_Pointers = std::array<ProcessState, static_cast<size_t>(DSP_Option::END_OF_LIST)>;
     
-    static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayour();
-    juce::AudioProcessorValueTreeState apvts {*this, nullptr, "Settings", createParameterLayour()};
+    static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
+    juce::AudioProcessorValueTreeState apvts {*this, nullptr, "Settings", createParameterLayout()};
     
     
     //Cached parameter instances
