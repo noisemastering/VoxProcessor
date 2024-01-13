@@ -9,6 +9,8 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
+auto getSelectedTabName() {return juce::String("Selected Tab");}
+
 auto getPhaserRateName() { return juce::String("Phaser RateHz"); }
 auto getPhaserCenterFreqName() { return juce::String("Phaser Center FreqHz"); }
 auto getPhaserDepthName() { return juce::String("Phaser Depth %" ); }
@@ -177,6 +179,16 @@ VoxProcessorAudioProcessor::VoxProcessorAudioProcessor()
         &getOverdriveBypassName,
         &getLadderFilterBypassName,
         &getGeneralFilterBypassName,
+    };
+    
+    auto intParams = std::array
+    {
+        &selectedTab,
+    };
+    
+    auto intFuncs = std::array
+    {
+        &getSelectedTabName,
     };
     
     initCachedParams<juce::AudioParameterBool*>(bypassParams, bypassNameFuncs);
@@ -559,10 +571,18 @@ juce::AudioProcessorValueTreeState::ParameterLayout VoxProcessorAudioProcessor::
     
     const int versionHint = 1;
     
+    //====== Selected Tab
+    auto name = getSelectedTabName();
+    layout.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{name, versionHint},
+                                                         name,
+                                                         0,
+                                                         static_cast<int>(DSP_Option::END_OF_LIST)-1,
+                                                         static_cast<int>(DSP_Option::Chorus)));
+    
     //====== Phaser
     
     //phaser rate LFO Hz
-    auto name = getPhaserRateName();
+    name = getPhaserRateName();
     layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{name, versionHint},
                                                            name,
                                                            juce::NormalisableRange<float>(0.01f, 2.f, 0.01f, 1.f),

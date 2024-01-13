@@ -121,6 +121,8 @@ public:
     juce::AudioParameterBool* ladderFilterBypass = nullptr;
     juce::AudioParameterBool* generalFilterBypass = nullptr;
     
+    juce::AudioParameterInt* selectedTab = nullptr;
+    
     juce::SmoothedValue<float>
     phaserRateHzSmoother,
     phaserCenterFreqHzSmoother,
