@@ -419,6 +419,7 @@ VoxProcessorAudioProcessorEditor::VoxProcessorAudioProcessorEditor (VoxProcessor
     setLookAndFeel(&lookAndFeel);
     addAndMakeVisible(tabbedComponent);
     addAndMakeVisible(dspGUI);
+    audioProcessor.guiNeedsLatestDspOrder.set(true);
     
     tabbedComponent.addListener(this);
     startTimer(30);
@@ -430,8 +431,9 @@ VoxProcessorAudioProcessorEditor::VoxProcessorAudioProcessorEditor (VoxProcessor
     //[DONE]: replace vertical sliders with SimpleMBComp rotary Sliders
     //TODO: replace Comboboxes with SimpleMBComp combobox
     //TODO: replace bypass buttons with SimpleMBComp bypass buttons.
-    //TODO: restore selected tab when window opens.
-    //TODO: restore tab order when window opens.
+    //[DONE]: restore tab order when window opens first time (after quit).
+    //[DONE]: restore tabs when closing/opening window (no quit)
+    //[DONE]: restore selected tab when closing/opening window (no quit).
 }
 
 VoxProcessorAudioProcessorEditor::~VoxProcessorAudioProcessorEditor()
@@ -548,7 +550,7 @@ void VoxProcessorAudioProcessorEditor::selectedTabChanged(int newCurrentTabIndex
          */
     if (selectedTabAttachment)
     {
-        selectedTabAttachment->setValueAsCompleteGesture(static_cast<int>(newCurrentTabIndex));
+        selectedTabAttachment->setValueAsCompleteGesture(static_cast<float>(newCurrentTabIndex));
         rebuildInterface();
     }
 }

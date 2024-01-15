@@ -142,6 +142,7 @@ public:
     generalFilterQualitySmoother,
     generalFilterGainSmoother;
     
+    juce::Atomic<bool> guiNeedsLatestDspOrder { false }; 
     std::vector<juce::RangedAudioParameter*> getParamsForOption(DSP_Option option);
     
 private:

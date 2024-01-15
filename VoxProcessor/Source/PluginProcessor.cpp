@@ -802,6 +802,11 @@ void VoxProcessorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     if(newDSPOrder != DSP_Order())
         dspOrder = newDSPOrder;
     
+    if (guiNeedsLatestDspOrder.compareAndSetBool(false, true))
+    {
+        restoreDspOrderFifo.push(dspOrder);
+    }
+    
 //    auto block = juce::dsp::AudioBlock<float>(buffer);
 //    leftChannel.process(block.getSingleChannelBlock(0), dspOrder);
 //    rightChannel.process(block.getSingleChannelBlock(1), dspOrder);
