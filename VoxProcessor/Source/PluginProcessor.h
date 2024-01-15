@@ -66,6 +66,9 @@ public:
         END_OF_LIST
     };
     
+    static constexpr int NEGATIVE_INFINITY = -72;
+    static constexpr int MAX_DECIBELS = 12;
+    
     enum class DSP_Option
     {
         Phase,
@@ -143,6 +146,7 @@ public:
     generalFilterGainSmoother;
     
     juce::Atomic<bool> guiNeedsLatestDspOrder { false }; 
+    juce::Atomic<float> leftPreRMS, rightPreRMS, leftPostRMS, rightPostRMS;
     std::vector<juce::RangedAudioParameter*> getParamsForOption(DSP_Option option);
     
 private:
