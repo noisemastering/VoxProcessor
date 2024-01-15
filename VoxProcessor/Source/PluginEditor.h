@@ -34,10 +34,12 @@ struct ExtendedTabbedButtonBar : juce::TabbedButtonBar, juce::DragAndDropTarget,
     {
         virtual ~Listener() = default;
         virtual void tabbedOrderChanged(VoxProcessorAudioProcessor::DSP_Order newOrder) = 0;
+        virtual void selectedTabChanged(int newCurrentTabIndex) = 0;
     };
     
     void addListener(Listener* l);
     void removeListener(Listener* l);
+    void currentTabChanged(int newCurrentTabIndex, const juce::String& newCurrentTabName) override;
     
 private:
     juce::TabBarButton* findDraggedItem(const SourceDetails& dragSourceDetails);
@@ -129,6 +131,7 @@ public:
     void resized() override;
     
     void tabbedOrderChanged(VoxProcessorAudioProcessor::DSP_Order) override;
+    void selectedTabChanged(int newCurrentTabIndex) override;
 
     void timerCallback() override;
 private:
@@ -138,8 +141,9 @@ private:
     LookAndFeel lookAndFeel;
     DSP_Gui dspGUI { audioProcessor };
     
-//    juce::TabbedComponent tabbedComponent { juce::TabbedButtonBar::Orientation::TabsAtTop};
     ExtendedTabbedButtonBar tabbedComponent;
+    std::unique_ptr<juce::ParameterAttachment> selectedTabAttachment;
+    
     void addTabsFromDSPOrder(VoxProcessorAudioProcessor::DSP_Order);
     void rebuildInterface();
 

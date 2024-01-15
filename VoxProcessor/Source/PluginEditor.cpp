@@ -300,7 +300,15 @@ void ExtendedTabbedButtonBar::removeListener(ExtendedTabbedButtonBar::Listener* 
     listeners.remove(l);
 }
 
-
+void ExtendedTabbedButtonBar::currentTabChanged(int newCurrentTabIndex, const juce::String &newCurrentTabName)
+{
+    juce::ignoreUnused(newCurrentTabName);
+    
+    listeners.call([newCurrentTabIndex](Listener& l)
+    {
+        l.selectedTabChanged(newCurrentTabIndex);
+    });
+}
 
 //============== DSP_GUI =======================================================
 
@@ -472,6 +480,25 @@ void VoxProcessorAudioProcessorEditor::timerCallback()
     {
         addTabsFromDSPOrder(newOrder);
     }
+    
+    if (selectedTabAttachment == nullptr)
+    {
+        selectedTabAttachment = std::make_unique<juce::ParameterAttachment>(*audioProcessor.selectedTab,
+            [this](float tabNum)
+            {
+                auto newTabNum = static_cast<int>(tabNum);
+                if(juce::isPositiveAndBelow(newTabNum, tabbedComponent.getNumTabs()))
+                {
+                    tabbedComponent.setCurrentTabIndex(newTabNum);
+                }
+                else
+                {
+                    jassertfalse;
+                }
+            });
+        
+        selectedTabAttachment->sendInitialUpdate();
+    }
 }
 
 void VoxProcessorAudioProcessorEditor::tabbedOrderChanged(VoxProcessorAudioProcessor::DSP_Order newOrder)
@@ -504,5 +531,24 @@ void VoxProcessorAudioProcessorEditor::rebuildInterface()
         auto params = audioProcessor.getParamsForOption(option);
         jassert( ! params.empty() );
         dspGUI.rebuildInterface(params);
+    }
+}
+
+void VoxProcessorAudioProcessorEditor::selectedTabChanged(int newCurrentTabIndex)
+{
+    /*
+         Selected Tab restoration requires a ParamAttachment to exist.
+         the attachment is also in charge of setting the Selected Tab parameter when the user clicks on a tab.
+         when the tab is changed, the interface is also rebuilt.
+         when the audio parameter settings are loaded from disk, the callback for the parameter attachment is called.
+         this callback changes the selected tab and rebuilds the interface.
+         the creation of the attachment can't happen until after tabs have been created.
+         tabs are created in TimerCallback whenever the restoreDspOrderFifo has a DSP_Order instance to pull.
+         This is why the attachment creation is not in the constructor, but is instead in timerCallback(), after it is determined that the restoreDspOrderFifo has items to pull.
+         */
+    if (selectedTabAttachment)
+    {
+        selectedTabAttachment->setValueAsCompleteGesture(static_cast<int>(newCurrentTabIndex));
+        rebuildInterface();
     }
 }

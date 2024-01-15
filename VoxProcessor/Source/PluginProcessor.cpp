@@ -9,7 +9,7 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
-auto getSelectedTabName() {return juce::String("Selected Tab");}
+auto getSelectedTabName() { return juce::String("Selected Tab"); }
 
 auto getPhaserRateName() { return juce::String("Phaser RateHz"); }
 auto getPhaserCenterFreqName() { return juce::String("Phaser Center FreqHz"); }
@@ -181,6 +181,8 @@ VoxProcessorAudioProcessor::VoxProcessorAudioProcessor()
         &getGeneralFilterBypassName,
     };
     
+    initCachedParams<juce::AudioParameterBool*>(bypassParams, bypassNameFuncs);
+    
     auto intParams = std::array
     {
         &selectedTab,
@@ -191,7 +193,7 @@ VoxProcessorAudioProcessor::VoxProcessorAudioProcessor()
         &getSelectedTabName,
     };
     
-    initCachedParams<juce::AudioParameterBool*>(bypassParams, bypassNameFuncs);
+    initCachedParams<juce::AudioParameterInt*>(intParams, intFuncs);
 }
 
 VoxProcessorAudioProcessor::~VoxProcessorAudioProcessor()
