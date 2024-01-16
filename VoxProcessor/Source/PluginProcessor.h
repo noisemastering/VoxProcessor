@@ -66,9 +66,6 @@ public:
         END_OF_LIST
     };
     
-    static constexpr int NEGATIVE_INFINITY = -72;
-    static constexpr int MAX_DECIBELS = 12;
-    
     enum class DSP_Option
     {
         Phase,

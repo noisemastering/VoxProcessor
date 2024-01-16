@@ -16,6 +16,9 @@
 /**
 */
 
+static constexpr int NEGATIVE_INFINITY = -72;
+static constexpr int MAX_DECIBELS = 12;
+
 struct ExtendedTabbedButtonBar : juce::TabbedButtonBar, juce::DragAndDropTarget, juce::DragAndDropContainer
 {
     ExtendedTabbedButtonBar();
@@ -142,10 +145,19 @@ private:
     DSP_Gui dspGUI { audioProcessor };
     
     ExtendedTabbedButtonBar tabbedComponent;
+    
+    static constexpr int meterWidth = 80;
+    static constexpr int fontHeight = 24;
+    static constexpr int tickIndent = 8;
+    static constexpr int meterChanWidth = 24;
+    
     std::unique_ptr<juce::ParameterAttachment> selectedTabAttachment;
     
     void addTabsFromDSPOrder(VoxProcessorAudioProcessor::DSP_Order);
     void rebuildInterface();
+    
+    static constexpr int NEGATIVE_INFINITY = -72;
+    static constexpr int MAX_DECIBELS = 12;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (VoxProcessorAudioProcessorEditor)
 };

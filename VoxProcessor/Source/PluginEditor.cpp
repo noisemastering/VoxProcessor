@@ -423,7 +423,7 @@ VoxProcessorAudioProcessorEditor::VoxProcessorAudioProcessorEditor (VoxProcessor
     
     tabbedComponent.addListener(this);
     startTimer(30);
-    setSize (600, 400);
+    setSize (768, 400);
     
     //TODO: add bypass button to Tabs
     //TODO: make selected tab more obvious
@@ -447,7 +447,111 @@ void VoxProcessorAudioProcessorEditor::paint (juce::Graphics& g)
 {
     // (Our component is opaque, so we must completely fill the background with a solid colour)
     g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
+    
+    auto fillMeter = [&](auto rect, auto& rmsSource)
+    {
+        g.setColour(juce::Colours::black);
+        g.fillRect(rect);
+        
+        auto rms = rmsSource.get();
+        if (rms > 1.0f)
+        {
+            g.setColour(juce::Colours::red);
+            //This defines a point at 0 dBFS
+            auto lowerLeft = juce::Point<float>(rect.getX(),
+                                                juce::jmap<float>
+                                                (juce::Decibels::gainToDecibels(1.f),
+                                                NEGATIVE_INFINITY,
+                                                MAX_DECIBELS,
+                                                rect.getBottom(),
+                                                rect.getY()));
+            //This defines a point at rms dBFS
+            auto upperRight = juce::Point<float>(rect.getRight(),
+                                                 juce::jmap<float>(juce::Decibels::gainToDecibels(rms),
+                                                NEGATIVE_INFINITY,
+                                                MAX_DECIBELS,
+                                                rect.getBottom(),
+                                                rect.getY()));
+            //This defines a rectangle using those points
+            auto overTHRect = juce::Rectangle<float>(lowerLeft, upperRight);
+            //This fills that rectangle in red
+            g.fillRect(overTHRect);
+        }
+        
+        //This clamps the rms level to 1.0, since the over-threshold if() draws everything over 0dBFS
+        rms = juce::jmin<float>(rms, 1.0);
+        g.setColour(juce::Colours::green);
+        //This draws the rectangle that represents the signal level below 0dBFS
+        g.fillRect(rect.withY(juce::jmap<float>(juce::Decibels::gainToDecibels(rms),
+                                                        NEGATIVE_INFINITY,
+                                                        MAX_DECIBELS,
+                                                        rect.getBottom(),
+                                                        rect.getY()))
+                           .withBottom(rect.getBottom()));
+    };
+    
+    auto drawTicks = [&](auto rect, auto leftMeterRightEdge, auto rightMeterLeftEdge)
+    {
+        for (int i = MAX_DECIBELS; i >= NEGATIVE_INFINITY; i-=12)
+        {
+            auto y = juce::jmap<int>(i, NEGATIVE_INFINITY, MAX_DECIBELS, rect.getBottom(), rect.getY());
+            auto r = juce::Rectangle<int>(rect.getWidth(), fontHeight);
+            r.setCentre(rect.getCentreX(), y);
+            
+            g.setColour(i == 0 ? juce::Colours::whitesmoke :
+                        i > 0 ? juce::Colours::red :
+                        juce::Colours::teal);
+            g.drawFittedText(juce::String(i), r, juce::Justification::centred, 1);
+            
+            if (i != MAX_DECIBELS && i != NEGATIVE_INFINITY)
+            {
+                g.drawLine(rect.getX() + tickIndent, y, leftMeterRightEdge - tickIndent, y);
+                g.drawLine(rightMeterLeftEdge + tickIndent, y, rect.getRight() - tickIndent, y);
+            }
+        }
+    };
+    
+    auto drawMeter = [&fillMeter, &drawTicks](auto rect, auto& g, const auto& leftSource, const auto& rightSource, const auto& label)
+    {
+        g.setColour(juce::Colours::teal);
+        g.drawRect(rect);
+        rect.reduce(2,2);
+        
+        g.setColour(juce::Colours::whitesmoke);
+        g.drawText(label, rect.removeFromBottom(fontHeight), juce::Justification::centred);
+        rect.removeFromTop(fontHeight / 2);
+        
+        const auto meterArea = rect;
+        const auto leftChan = rect.removeFromLeft(meterChanWidth);
+        const auto rightChan = rect.removeFromRight(meterChanWidth);
+        
+        fillMeter(leftChan, leftSource);
+        fillMeter(rightChan, rightSource);
+        drawTicks(meterArea, leftChan.getRight(), rightChan.getX());
+    };
 
+    auto bounds = getLocalBounds();
+    auto preMeterArea = bounds.removeFromLeft(meterWidth);
+    drawMeter(preMeterArea,
+              g,
+              audioProcessor.leftPreRMS,
+              audioProcessor.rightPreRMS,
+              "Input");
+    auto postMeterArea = bounds.removeFromRight(meterWidth);
+    drawMeter(postMeterArea,
+              g,
+              audioProcessor.leftPostRMS, 
+              audioProcessor.rightPostRMS,
+              "Output");
+//
+//    fillMeter(preMeterArea.removeFromLeft(preMeterArea.getWidth() / 2), audioProcessor.leftPreRMS);
+//    fillMeter(preMeterArea, audioProcessor.rightPreRMS);
+//    fillMeter(postMeterArea.removeFromLeft(postMeterArea.getWidth() / 2), audioProcessor.leftPostRMS);
+//    fillMeter(postMeterArea, audioProcessor.rightPostRMS);
+//    
+//    drawTicks(leftMeterArea, leftMeterArea.removeFromLeft(meterChanWidth).getRight(), leftMeterArea.removeFromRight(meterChanWidth).getX());
+//    drawTicks(rightMeterArea, rightMeterArea.removeFromLeft(meterChanWidth).getRight(), rightMeterArea.removeFromRight(meterChanWidth).getX());
+    
     g.setColour (juce::Colours::white);
     g.setFont (15.0f);
     g.drawFittedText ("Morris Sound", getLocalBounds(), juce::Justification::centred, 1);
@@ -459,6 +563,12 @@ void VoxProcessorAudioProcessorEditor::resized()
     // subcomponents in your editor..
     auto bounds = getLocalBounds();
     bounds.removeFromTop(10);
+    
+    auto leftMeterArea = bounds.removeFromLeft(meterWidth);
+    auto rightMeterArea = bounds.removeFromRight(meterWidth);
+    
+    juce::ignoreUnused(leftMeterArea, rightMeterArea);
+    
     tabbedComponent.setBounds(bounds.removeFromTop(30));
     dspGUI.setBounds(bounds);
     
@@ -466,6 +576,7 @@ void VoxProcessorAudioProcessorEditor::resized()
 
 void VoxProcessorAudioProcessorEditor::timerCallback()
 {
+    repaint();
     if(audioProcessor.restoreDspOrderFifo.getNumAvailableForReading() == 0)
         return;
     
