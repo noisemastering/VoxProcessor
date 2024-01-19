@@ -173,7 +173,7 @@ void ExtendedTabbedButtonBar::mouseDown(const juce::MouseEvent& e)
         auto idx = tabs.indexOf(tabBarBeingDragged);
         if (idx != -1) {
             setCurrentTabIndex(idx);
-        
+            setTabColours();
         }
         startDragging(tabBarBeingDragged->TabBarButton::getTitle(),tabBarBeingDragged, dragImage);
     }
@@ -289,6 +289,17 @@ static VoxProcessorAudioProcessor::DSP_Option getDSPOptionFromName(juce::String 
         return VoxProcessorAudioProcessor::DSP_Option::GeneralFilter;
     
     return VoxProcessorAudioProcessor::DSP_Option::END_OF_LIST;
+}
+
+void ExtendedTabbedButtonBar::setTabColours()
+{
+    auto tabs = getTabs();
+    for (int i = 0; i < tabs.size(); ++i)
+    {
+        auto color = tabs[i]->isFrontTab() ? juce::Colours::darkgreen : juce::Colours::greenyellow;
+        setTabBackgroundColour(i, color);
+        tabs[i]->repaint();
+    }
 }
 
 //=============================== CUSTOM POWER BUTTON ===============================================
@@ -471,7 +482,7 @@ VoxProcessorAudioProcessorEditor::VoxProcessorAudioProcessorEditor (VoxProcessor
     setSize (768, 400);
     
     //[DONE]: add bypass button to Tabs
-    //TODO: make selected tab more obvious
+    //[DONE]: make selected tab more obvious
     //[DONE]: mouse-down on tab (during drag) should change DSP_Gui
     //[DONE]: replace vertical sliders with SimpleMBComp rotary Sliders
     //[DONE] replace Comboboxes with SimpleMBComp combobox
@@ -705,7 +716,7 @@ void VoxProcessorAudioProcessorEditor::addTabsFromDSPOrder(VoxProcessorAudioProc
             }
         }
     }
-    
+    tabbedComponent.setTabColours();
     rebuildInterface();
     audioProcessor.dspOrderFifo.push(newOrder);
 }
