@@ -418,13 +418,13 @@ void DSP_Gui::rebuildInterface(std::vector<juce::RangedAudioParameter*> params)
     for (size_t i = 0; i < params.size(); ++i) 
     {
         auto p = params[i];
-        if (auto* choice = dynamic_cast<juce::AudioParameterChoice*>(p)) {
-            comboBoxes.push_back(std::make_unique<juce::ComboBox>());
-            auto& cb = *comboBoxes.back();
-            cb.addItemList(choice->choices, 1);
-            comboBoxAttachments.push_back(std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(processor.apvts, p->getName(100), cb));
-        }
-        else if( auto* toggle = dynamic_cast<juce::AudioParameterBool*>(p) )
+//        if (auto* choice = dynamic_cast<juce::AudioParameterChoice*>(p)) {
+//            comboBoxes.push_back(std::make_unique<juce::ComboBox>());
+//            auto& cb = *comboBoxes.back();
+//            cb.addItemList(choice->choices, 1);
+//            comboBoxAttachments.push_back(std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(processor.apvts, p->getName(100), cb));
+//        }
+         if( auto* toggle = dynamic_cast<juce::AudioParameterBool*>(p) )
         {
 //            buttons.push_back( std::make_unique<juce::ToggleButton>("Bypass") );
 //            auto& btn = *buttons.back();
@@ -474,7 +474,7 @@ VoxProcessorAudioProcessorEditor::VoxProcessorAudioProcessorEditor (VoxProcessor
     //TODO: make selected tab more obvious
     //[DONE]: mouse-down on tab (during drag) should change DSP_Gui
     //[DONE]: replace vertical sliders with SimpleMBComp rotary Sliders
-    //TODO: replace Comboboxes with SimpleMBComp combobox
+    //[DONE] replace Comboboxes with SimpleMBComp combobox
     //TODO: replace bypass buttons with SimpleMBComp bypass buttons.
     //[DONE]: restore tab order when window opens first time (after quit).
     //[DONE]: restore tabs when closing/opening window (no quit)
