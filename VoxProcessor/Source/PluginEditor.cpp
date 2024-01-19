@@ -170,6 +170,12 @@ void ExtendedTabbedButtonBar::mouseDown(const juce::MouseEvent& e)
 //    DBG("ExtendedTabbedButtonBar::mouseDown");
     if(auto tabBarBeingDragged = dynamic_cast<ExtendedTabBarButton*>(e.originalComponent))
     {
+        auto tabs = getTabs();
+        auto idx = tabs.indexOf(tabBarBeingDragged);
+        if (idx != -1) {
+            setCurrentTabIndex(idx);
+        
+        }
         startDragging(tabBarBeingDragged->TabBarButton::getTitle(),tabBarBeingDragged, dragImage);
     }
 }
@@ -203,6 +209,10 @@ juce::Array<juce::TabBarButton*> ExtendedTabbedButtonBar::getTabs()
     for (int i = 0; i < numTabs; ++i) {
         tabs.getReference(i) = getTabButton(i);
     }
+    
+    auto unsorted = tabs;
+    Comparator comparator;
+    tabs.sort(comparator);
     
     return tabs;
 }
