@@ -11,6 +11,7 @@
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
 #include <LookAndFeel.h>
+#include <CustomButtons.h>
 
 //==============================================================================
 /**
@@ -18,6 +19,23 @@
 
 static constexpr int NEGATIVE_INFINITY = -72;
 static constexpr int MAX_DECIBELS = 12;
+
+template<typename ParamsContainer>
+static juce::AudioParameterBool* findBypassParam(const ParamsContainer& params)
+{
+    for( auto p : params )
+    {
+        if( auto bypass = dynamic_cast<juce::AudioParameterBool*>(p))
+        {
+            if( bypass->name.containsIgnoreCase("bypass") )
+            {
+                return bypass;
+            }
+        }
+    }
+    return nullptr;
+}
+
 
 struct ExtendedTabbedButtonBar : juce::TabbedButtonBar, juce::DragAndDropTarget, juce::DragAndDropContainer
 {
@@ -129,6 +147,16 @@ private:
     VoxProcessorAudioProcessor::DSP_Option option;
 };
 
+struct PowerButtonWithParam : PowerButton
+{
+    PowerButtonWithParam(juce::AudioParameterBool* p);
+    void changeAttachment(juce::AudioParameterBool* p);
+    juce::AudioParameterBool* getParam() const { return param; }
+private:
+    std::unique_ptr<juce::ButtonParameterAttachment> attachment;
+    juce::AudioParameterBool* param;
+};
+
 struct RotarySliderWithLabels; //Forward declaration
 struct DSP_Gui : juce::Component
 {
@@ -138,6 +166,7 @@ struct DSP_Gui : juce::Component
     void paint(juce::Graphics& g) override;
     
     void rebuildInterface(std::vector<juce::RangedAudioParameter*> params);
+    void toggleSliderEnablement(bool enabled);
     
     VoxProcessorAudioProcessor& processor;
     std::vector<std::unique_ptr<RotarySliderWithLabels>> sliders;
@@ -188,6 +217,7 @@ private:
     
     void addTabsFromDSPOrder(VoxProcessorAudioProcessor::DSP_Order);
     void rebuildInterface();
+    void refreshDSPGUIControlEnablement(PowerButtonWithParam* button);
     
     static constexpr int NEGATIVE_INFINITY = -72;
     static constexpr int MAX_DECIBELS = 12;
