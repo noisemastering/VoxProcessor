@@ -10,6 +10,7 @@
 
 #include <JuceHeader.h>
 #include <Fifo.h>
+#include <SingleChannelSampleFifo.h>
 
 //==============================================================================
 /**
@@ -149,6 +150,9 @@ public:
     
     juce::Atomic<bool> guiNeedsLatestDspOrder { false }; 
     juce::Atomic<float> leftPreRMS, rightPreRMS, leftPostRMS, rightPostRMS;
+    
+    SimpleMBComp::SingleChannelSampleFifo<juce::AudioBuffer<float>> leftSCSF { SimpleMBComp::Channel::Left }, rightSCSF { SimpleMBComp::Channel::Right };
+    
     std::vector<juce::RangedAudioParameter*> getParamsForOption(DSP_Option option);
     
 private:

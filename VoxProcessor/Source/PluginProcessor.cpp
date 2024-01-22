@@ -522,6 +522,9 @@ void VoxProcessorAudioProcessor::prepareToPlay (double sampleRate, int samplesPe
     spec.numChannels = getTotalNumInputChannels();
     inputGainDSP.prepare(spec);
     outputGainDSP.prepare(spec);
+    
+    leftSCSF.prepare(samplesPerBlock);
+    rightSCSF.prepare(samplesPerBlock);
 }
 
 std::vector<juce::SmoothedValue<float>*> VoxProcessorAudioProcessor::getSmoothers()
@@ -880,6 +883,9 @@ void VoxProcessorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     
     leftPostRMS.set(buffer.getRMSLevel(0, 0, numSamples));
     rightPostRMS.set(buffer.getRMSLevel(1, 0, numSamples));
+    
+    leftSCSF.update(buffer);
+    rightSCSF.update(buffer);
 }
 
 //==============================================================================

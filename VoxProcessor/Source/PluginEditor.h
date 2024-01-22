@@ -12,6 +12,7 @@
 #include "PluginProcessor.h"
 #include <LookAndFeel.h>
 #include <CustomButtons.h>
+#include <SpectrumAnalyzer.h>
 
 //==============================================================================
 /**
@@ -35,6 +36,7 @@ static juce::AudioParameterBool* findBypassParam(const ParamsContainer& params)
     }
     return nullptr;
 }
+
 
 
 struct ExtendedTabbedButtonBar : juce::TabbedButtonBar, juce::DragAndDropTarget, juce::DragAndDropContainer
@@ -204,6 +206,12 @@ private:
     DSP_Gui dspGUI { audioProcessor };
     
     ExtendedTabbedButtonBar tabbedComponent;
+    
+    SimpleMBComp::SpectrumAnalyzer analyzer {
+        audioProcessor,
+        audioProcessor.leftSCSF,
+        audioProcessor.rightSCSF
+    };
     
     static constexpr int meterWidth = 80;
     static constexpr int fontHeight = 24;

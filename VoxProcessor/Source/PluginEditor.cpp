@@ -547,6 +547,8 @@ VoxProcessorAudioProcessorEditor::VoxProcessorAudioProcessorEditor (VoxProcessor
     addAndMakeVisible(inGainControl.get());
     addAndMakeVisible(outGainControl.get());
     
+    addAndMakeVisible(analyzer);
+    
     SimpleMBComp::addLabelPairs(inGainControl->labels, *audioProcessor.inputGain, "dB");
     SimpleMBComp::addLabelPairs(outGainControl->labels, *audioProcessor.outputGain, "dB");
         
@@ -557,7 +559,7 @@ VoxProcessorAudioProcessorEditor::VoxProcessorAudioProcessorEditor (VoxProcessor
     
     tabbedComponent.addListener(this);
     startTimer(30);
-    setSize (768, 450 + ioControlSize);
+    setSize (768, 450);
     
     //[DONE]: add bypass button to Tabs
     //[DONE]: make selected tab more obvious
@@ -704,14 +706,13 @@ void VoxProcessorAudioProcessorEditor::resized()
     auto bounds = getLocalBounds();
     bounds.removeFromTop(10);
     
-    auto gainArea = bounds.removeFromBottom(ioControlSize);
-    inGainControl->setBounds(gainArea.removeFromLeft(ioControlSize));
-    outGainControl->setBounds(gainArea.removeFromRight(ioControlSize));
-    
     auto leftMeterArea = bounds.removeFromLeft(meterWidth);
     auto rightMeterArea = bounds.removeFromRight(meterWidth);
     
-    juce::ignoreUnused(leftMeterArea, rightMeterArea);
+    inGainControl->setBounds(leftMeterArea.removeFromBottom(ioControlSize).reduced(3));
+    outGainControl->setBounds(rightMeterArea.removeFromBottom(ioControlSize).reduced(3));
+    
+    analyzer.setBounds(bounds.removeFromTop(bounds.getHeight() * 0.7));
     
     tabbedComponent.setBounds(bounds.removeFromTop(30));
     dspGUI.setBounds(bounds);
