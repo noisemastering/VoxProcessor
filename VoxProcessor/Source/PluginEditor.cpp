@@ -567,7 +567,7 @@ VoxProcessorAudioProcessorEditor::VoxProcessorAudioProcessorEditor (VoxProcessor
     //[DONE]: restore selected tab when closing/opening window (no quit).
     //TODO: GUI design for each DSP instance?
     //[DONE]: fix graphic issue when dragging tab over bypass button
-    //TODO: restore selected tab when window opens.
+    //[DONE]: restore selected tab when window opens.
     //TODO: bypass button should toggle RotarySliders enablement    
 }
 
@@ -836,6 +836,7 @@ void VoxProcessorAudioProcessorEditor::selectedTabChanged(int newCurrentTabIndex
     if (selectedTabAttachment)
     {
         rebuildInterface();
+        tabbedComponent.setTabColours();
         selectedTabAttachment->setValueAsCompleteGesture(static_cast<float>(newCurrentTabIndex));
     }
 }
