@@ -475,21 +475,36 @@ VoxProcessorAudioProcessorEditor::VoxProcessorAudioProcessorEditor (VoxProcessor
     setLookAndFeel(&lookAndFeel);
     addAndMakeVisible(tabbedComponent);
     addAndMakeVisible(dspGUI);
+    
+    inGainControl = std::make_unique<RotarySliderWithLabels>(audioProcessor.inputGain, "dB", "IN");
+    outGainControl = std::make_unique<RotarySliderWithLabels>(audioProcessor.outputGain, "dB", "OUT");
+    
+    addAndMakeVisible(inGainControl.get());
+    addAndMakeVisible(outGainControl.get());
+    
+    SimpleMBComp::addLabelPairs(inGainControl->labels, *audioProcessor.inputGain, "dB");
+    SimpleMBComp::addLabelPairs(outGainControl->labels, *audioProcessor.outputGain, "dB");
+        
+    inGainAttachment = std::make_unique<juce::SliderParameterAttachment>(*audioProcessor.inputGain, *inGainControl);
+    outGainAttachment =  std::make_unique<juce::SliderParameterAttachment>(*audioProcessor.outputGain, *outGainControl);
+    
     audioProcessor.guiNeedsLatestDspOrder.set(true);
     
     tabbedComponent.addListener(this);
     startTimer(30);
-    setSize (768, 400);
+    setSize (768, 450 + ioControlSize);
     
     //[DONE]: add bypass button to Tabs
     //[DONE]: make selected tab more obvious
     //[DONE]: mouse-down on tab (during drag) should change DSP_Gui
     //[DONE]: replace vertical sliders with SimpleMBComp rotary Sliders
     //[DONE] replace Comboboxes with SimpleMBComp combobox
-    //TODO: replace bypass buttons with SimpleMBComp bypass buttons.
+    //[DONE]: replace bypass buttons with SimpleMBComp bypass buttons.
     //[DONE]: restore tab order when window opens first time (after quit).
     //[DONE]: restore tabs when closing/opening window (no quit)
     //[DONE]: restore selected tab when closing/opening window (no quit).
+    //TODO: GUI design for each DSP instance?
+    //TODO: fix graphic issue when dragging tab over bypass button
 }
 
 VoxProcessorAudioProcessorEditor::~VoxProcessorAudioProcessorEditor()
@@ -587,6 +602,8 @@ void VoxProcessorAudioProcessorEditor::paint (juce::Graphics& g)
     };
 
     auto bounds = getLocalBounds();
+    bounds.removeFromBottom(ioControlSize);
+    
     auto preMeterArea = bounds.removeFromLeft(meterWidth);
     drawMeter(preMeterArea,
               g,
@@ -619,6 +636,10 @@ void VoxProcessorAudioProcessorEditor::resized()
     // subcomponents in your editor..
     auto bounds = getLocalBounds();
     bounds.removeFromTop(10);
+    
+    auto gainArea = bounds.removeFromBottom(ioControlSize);
+    inGainControl->setBounds(gainArea.removeFromLeft(ioControlSize));
+    outGainControl->setBounds(gainArea.removeFromRight(ioControlSize));
     
     auto leftMeterArea = bounds.removeFromLeft(meterWidth);
     auto rightMeterArea = bounds.removeFromRight(meterWidth);

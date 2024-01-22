@@ -64,6 +64,10 @@ auto getOverdriveBypassName() { return juce::String("Overdrive Bypass"); }
 auto getLadderFilterBypassName() { return juce::String("Ladder Filter Bypass"); }
 auto getGeneralFilterBypassName() { return juce::String("General Filter Bypass"); }
 
+auto getInputGainName() { return juce::String("Input Gain dB"); }
+auto getOutputGainName() { return juce::String("Output Gain dB"); }
+
+
 //==============================================================================
 VoxProcessorAudioProcessor::VoxProcessorAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -116,6 +120,9 @@ VoxProcessorAudioProcessor::VoxProcessorAudioProcessor()
         &generalFilterFreqHz,
         &generalFilterQuality,
         &generalFilterGain,
+        
+        &inputGain,
+        &outputGain,
     };
     
     auto floatNameFuncs = std::array
@@ -141,6 +148,9 @@ VoxProcessorAudioProcessor::VoxProcessorAudioProcessor()
         &getGeneralFilterFreqName,
         &getGeneralFilterQualityName,
         &getGeneralFilterGainName,
+        
+        &getInputGainName,
+        &getOutputGainName,
     };
     
     
@@ -405,6 +415,8 @@ void VoxProcessorAudioProcessor::updateSmoothersFromParams(int numSamplesToSkip,
         generalFilterFreqHz,
         generalFilterQuality,
         generalFilterGain,
+        inputGain,
+        outputGain,
     };
     
     auto smoothers = getSmoothers();
@@ -507,6 +519,9 @@ void VoxProcessorAudioProcessor::prepareToPlay (double sampleRate, int samplesPe
     }
     
     updateSmoothersFromParams(1, SmootherUpdateMode::initialize);
+    spec.numChannels = getTotalNumInputChannels();
+    inputGainDSP.prepare(spec);
+    outputGainDSP.prepare(spec);
 }
 
 std::vector<juce::SmoothedValue<float>*> VoxProcessorAudioProcessor::getSmoothers()
@@ -530,6 +545,8 @@ std::vector<juce::SmoothedValue<float>*> VoxProcessorAudioProcessor::getSmoother
         &generalFilterFreqHzSmoother,
         &generalFilterQualitySmoother,
         &generalFilterGainSmoother,
+        &inputGainSmoother,
+        &outputGainSmoother,
     };
     
     return smoothers;
@@ -581,6 +598,17 @@ juce::AudioProcessorValueTreeState::ParameterLayout VoxProcessorAudioProcessor::
                                                          static_cast<int>(DSP_Option::END_OF_LIST)-1,
                                                          static_cast<int>(DSP_Option::Chorus)));
     
+    name = getInputGainName();
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID(name, versionHint),
+                                                           name,
+                                                           juce::NormalisableRange<float>(-18, 18, 0.1,1.0),
+                                                           0.0f));
+    
+    name = getOutputGainName();
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID(name, versionHint),
+                                                           name,
+                                                           juce::NormalisableRange<float>(-18, 18, 0.1,1.0),
+                                                           0.0f));
     //====== Phaser
     
     //phaser rate LFO Hz
@@ -750,7 +778,6 @@ juce::AudioProcessorValueTreeState::ParameterLayout VoxProcessorAudioProcessor::
     name = getGeneralFilterBypassName();
     layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{name, versionHint}, name, false));
     
-    
     return layout;
 }
 
@@ -814,10 +841,19 @@ void VoxProcessorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     auto samplesRemaining = numSamples;
     auto maxSamplesToProcess = juce::jmin(samplesRemaining, 64);
     
+    auto block = juce::dsp::AudioBlock<float>(buffer);
+    
+    //This block is to pass the smoothed value from pre gain to the meters.
+    auto preCtx = juce::dsp::ProcessContextReplacing<float>(block);
+    
+    inputGainSmoother.setTargetValue( inputGain->get() );
+    outputGainSmoother.setTargetValue( outputGain->get() );
+    inputGainDSP.setGainDecibels( inputGainSmoother.getNextValue() );
+    inputGainDSP.process(preCtx);
+    
     leftPreRMS.set(buffer.getRMSLevel(0, 0, numSamples));
     rightPreRMS.set(buffer.getRMSLevel(1, 0, numSamples));
     
-    auto block = juce::dsp::AudioBlock<float>(buffer);
     size_t startSample = 0;
     while (samplesRemaining > 0)
     {
@@ -834,6 +870,13 @@ void VoxProcessorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         startSample += samplesToProcess;
         samplesRemaining -= samplesToProcess;
     }
+    
+    //This block is to pass the smoothed value from post gain to the meters.
+    auto postCtx = juce::dsp::ProcessContextReplacing<float>(block);
+    
+    outputGainSmoother.setTargetValue( outputGain->get() );
+    outputGainDSP.setGainDecibels( inputGainSmoother.getNextValue() );
+    outputGainDSP.process(postCtx);
     
     leftPostRMS.set(buffer.getRMSLevel(0, 0, numSamples));
     rightPostRMS.set(buffer.getRMSLevel(1, 0, numSamples));
